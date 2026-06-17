@@ -1,0 +1,1032 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta http-equiv="Content-Style-Type" content="text/css">
+  <title></title>
+  <meta name="Generator" content="Cocoa HTML Writer">
+  <meta name="CocoaVersion" content="2685.6">
+  <style type="text/css">
+    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica}
+    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica; min-height: 14.0px}
+  </style>
+</head>
+<body>
+<p class="p1">&lt;!doctype html&gt;</p>
+<p class="p1">&lt;html lang="en-GB"&gt;</p>
+<p class="p1">&lt;head&gt;</p>
+<p class="p1">&lt;meta charset="utf-8"&gt;</p>
+<p class="p1">&lt;meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"&gt;</p>
+<p class="p1">&lt;meta name="apple-mobile-web-app-capable" content="yes"&gt;</p>
+<p class="p1">&lt;meta name="apple-mobile-web-app-status-bar-style" content="default"&gt;</p>
+<p class="p1">&lt;meta name="apple-mobile-web-app-title" content="Code Cracker"&gt;</p>
+<p class="p1">&lt;title&gt;Code Cracker — Verbal Reasoning Trainer&lt;/title&gt;</p>
+<p class="p1">&lt;script src="https://cdn.tailwindcss.com"&gt;&lt;/script&gt;</p>
+<p class="p1">&lt;script type="importmap"&gt;</p>
+<p class="p1">{"imports":{</p>
+<p class="p1"><span class="Apple-converted-space">  </span>"react":"https://esm.sh/react@18.3.1",</p>
+<p class="p1"><span class="Apple-converted-space">  </span>"react-dom/client":"https://esm.sh/react-dom@18.3.1/client?deps=react@18.3.1",</p>
+<p class="p1"><span class="Apple-converted-space">  </span>"lucide-react":"https://esm.sh/lucide-react@0.383.0?deps=react@18.3.1"</p>
+<p class="p1">}}</p>
+<p class="p1">&lt;/script&gt;</p>
+<p class="p1">&lt;script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js"&gt;&lt;/script&gt;</p>
+<p class="p1">&lt;style&gt;html,body{margin:0;padding:0;background:#F4F7FA;}&lt;/style&gt;</p>
+<p class="p1">&lt;/head&gt;</p>
+<p class="p1">&lt;body&gt;</p>
+<p class="p1">&lt;div id="root"&gt;&lt;/div&gt;</p>
+<p class="p1">&lt;script type="text/babel" data-type="module" data-presets="react"&gt;</p>
+<p class="p2"><br></p>
+<p class="p1">// ============================================================================</p>
+<p class="p1">//<span class="Apple-converted-space">  </span>EDIT THESE THREE LINES, THEN SAVE. Nothing else needs changing.</p>
+<p class="p1">// ============================================================================</p>
+<p class="p1">const SUPABASE_URL<span class="Apple-converted-space">      </span>= "https://tcsxqttevfciezjdrepq.supabase.co"; <span class="Apple-converted-space">  </span>// &lt;-- paste your Project URL</p>
+<p class="p1">const SUPABASE_ANON_KEY = “eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRjc3hxdHRldmZjaWV6amRyZXBxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2ODQ1ODIsImV4cCI6MjA5NzI2MDU4Mn0.KeeCXlLhNDeMAUZTcIyzbnsjjp86ZrIRH0pLowraoOo”;<span class="Apple-converted-space">    </span>// &lt;-- paste your anon public key</p>
+<p class="p1">const PROFILE_ID<span class="Apple-converted-space">        </span>= “tcsxqttevfciezjdrepq”;<span class="Apple-converted-space">                          </span>// any fixed string; leave as-is is fine</p>
+<p class="p1">// ============================================================================</p>
+<p class="p2"><br></p>
+<p class="p1">const REST = SUPABASE_URL + "/rest/v1/progress";</p>
+<p class="p1">const HDR = { "apikey": SUPABASE_ANON_KEY, "Authorization": "Bearer " + SUPABASE_ANON_KEY, "Content-Type": "application/json" };</p>
+<p class="p1">const TSKEY = "smma-vr-state-v1::ts";</p>
+<p class="p1">const CONFIGURED = SUPABASE_URL.indexOf("YOURPROJECT") === -1 &amp;&amp; SUPABASE_ANON_KEY.indexOf("PASTE-") === -1;</p>
+<p class="p2"><br></p>
+<p class="p1">async function remoteGet(){</p>
+<p class="p1"><span class="Apple-converted-space">  </span>if(!CONFIGURED) return null;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const r = await fetch(REST + "?id=eq." + encodeURIComponent(PROFILE_ID) + "&amp;select=data,updated_at", { headers: HDR });</p>
+<p class="p1"><span class="Apple-converted-space">  </span>if(!r.ok) throw new Error("remote get " + r.status);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const rows = await r.json();</p>
+<p class="p1"><span class="Apple-converted-space">  </span>if(!rows || !rows.length) return null;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>return { value: rows[0].data, updatedAt: Date.parse(rows[0].updated_at) || 0 };</p>
+<p class="p1">}</p>
+<p class="p1">async function remotePut(valueObj){</p>
+<p class="p1"><span class="Apple-converted-space">  </span>if(!CONFIGURED) return;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const body = [{ id: PROFILE_ID, data: valueObj, updated_at: new Date().toISOString() }];</p>
+<p class="p1"><span class="Apple-converted-space">  </span>await fetch(REST, { method: "POST", headers: { ...HDR, "Prefer": "resolution=merge-duplicates" }, body: JSON.stringify(body) });</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">// Same async contract the app already expects. localStorage is the source of truth</p>
+<p class="p1">// when offline; the cloud row wins on load only when it is strictly newer.</p>
+<p class="p1">window.storage = {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>async get(key){</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const localRaw = localStorage.getItem(key);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const localTs = Number(localStorage.getItem(TSKEY) || 0);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>let remote = null;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>try { remote = await remoteGet(); } catch(e){}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>if(remote &amp;&amp; remote.updatedAt &gt;= localTs){</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const raw = typeof remote.value === "string" ? remote.value : JSON.stringify(remote.value);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>localStorage.setItem(key, raw);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>localStorage.setItem(TSKEY, String(remote.updatedAt));</p>
+<p class="p1"><span class="Apple-converted-space">      </span>return { key, value: raw };</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>if(localRaw === null) throw new Error("not found");</p>
+<p class="p1"><span class="Apple-converted-space">    </span>return { key, value: localRaw };</p>
+<p class="p1"><span class="Apple-converted-space">  </span>},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>async set(key, value){</p>
+<p class="p1"><span class="Apple-converted-space">    </span>localStorage.setItem(key, value);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>localStorage.setItem(TSKEY, String(Date.now()));</p>
+<p class="p1"><span class="Apple-converted-space">    </span>let parsed; try { parsed = JSON.parse(value); } catch(e){ parsed = value; }</p>
+<p class="p1"><span class="Apple-converted-space">    </span>remotePut(parsed).catch(function(){});</p>
+<p class="p1"><span class="Apple-converted-space">    </span>return { key, value };</p>
+<p class="p1"><span class="Apple-converted-space">  </span>},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>async delete(key){ localStorage.removeItem(key); try{ if(CONFIGURED) await fetch(REST + "?id=eq." + encodeURIComponent(PROFILE_ID), { method:"DELETE", headers: HDR }); }catch(e){} return { key, deleted: true }; },</p>
+<p class="p1"><span class="Apple-converted-space">  </span>async list(prefix){ return { keys: Object.keys(localStorage).filter(function(k){ return !prefix || k.startsWith(prefix); }) }; }</p>
+<p class="p1">};</p>
+<p class="p2"><br></p>
+<p class="p1">import { createRoot } from "react-dom/client";</p>
+<p class="p1">import React, { useState, useEffect, useRef } from "react";</p>
+<p class="p1">import { Flame, Zap, Target, Timer, BarChart3, Info, Check, X, ArrowRight, ChevronLeft } from "lucide-react";</p>
+<p class="p2"><br></p>
+<p class="p1">/* ================= DATA (validated banks injected at build time) ================= */</p>
+<p class="p1">const BANKS = {"synonym":[{"id":"sy1","level":1,"target":"BEGIN","options":["start","finish","sleep","carry"],"answer":"start","explain":"To begin something is to start it."},{"id":"sy2","level":1,"target":"LARGE","options":["big","thin","late","loud"],"answer":"big","explain":"Large and big both mean great in size."},{"id":"sy3","level":1,"target":"QUICK","options":["fast","slow","heavy","kind"],"answer":"fast","explain":"Quick and fast both mean moving at speed."},{"id":"sy4","level":1,"target":"SHOUT","options":["yell","whisper","walk","write"],"answer":"yell","explain":"To shout is to yell — to call out loudly."},{"id":"sy5","level":1,"target":"HAPPY","options":["glad","angry","tired","lost"],"answer":"glad","explain":"Happy and glad both describe feeling pleased."},{"id":"sy6","level":2,"target":"PLENTIFUL","options":["abundant","scarce","hollow","gradual"],"answer":"abundant","explain":"Plentiful and abundant both mean existing in large amounts."},{"id":"sy7","level":2,"target":"CAUTIOUS","options":["careful","reckless","cheerful","distant"],"answer":"careful","explain":"A cautious person takes care to avoid danger — they are careful."},{"id":"sy8","level":2,"target":"ANCIENT","options":["old","modern","broken","golden"],"answer":"old","explain":"Ancient means very old."},{"id":"sy9","level":2,"target":"VACANT","options":["empty","crowded","dusty","locked"],"answer":"empty","explain":"Vacant means empty or unoccupied."},{"id":"sy10","level":2,"target":"RAPID","options":["swift","sluggish","narrow","frequent"],"answer":"swift","explain":"Rapid and swift both mean very fast."},{"id":"sy11","level":3,"target":"CANDID","options":["frank","secretive","polite","nervous"],"answer":"frank","explain":"Candid and frank both mean honest and direct."},{"id":"sy12","level":3,"target":"FRUGAL","options":["thrifty","wasteful","wealthy","greedy"],"answer":"thrifty","explain":"Frugal and thrifty both mean careful with money."},{"id":"sy13","level":3,"target":"OBSTINATE","options":["stubborn","flexible","foolish","rude"],"answer":"stubborn","explain":"Obstinate means stubbornly refusing to change your mind."},{"id":"sy14","level":3,"target":"MELANCHOLY","options":["sorrowful","joyful","thoughtful","sleepy"],"answer":"sorrowful","explain":"Melancholy means deeply sad — sorrowful."},{"id":"sy15","level":3,"target":"DILIGENT","options":["hard-working","lazy","talented","strict"],"answer":"hard-working","explain":"A diligent person works carefully and persistently."}],"antonym":[{"id":"an1","level":1,"target":"HOT","options":["cold","warm","wet","soft"],"answer":"cold","explain":"Cold is the opposite of hot. Warm is close to hot, not opposite."},{"id":"an2","level":1,"target":"EARLY","options":["late","soon","fast","first"],"answer":"late","explain":"Late is the opposite of early."},{"id":"an3","level":1,"target":"EMPTY","options":["full","hollow","open","clean"],"answer":"full","explain":"Full is the opposite of empty. Hollow means much the same as empty."},{"id":"an4","level":1,"target":"NOISY","options":["quiet","loud","busy","bright"],"answer":"quiet","explain":"Quiet is the opposite of noisy. Loud means the same as noisy."},{"id":"an5","level":1,"target":"WIN","options":["lose","draw","play","try"],"answer":"lose","explain":"To lose is the opposite of to win."},{"id":"an6","level":2,"target":"EXPAND","options":["shrink","stretch","explode","widen"],"answer":"shrink","explain":"Expand means get bigger; shrink means get smaller."},{"id":"an7","level":2,"target":"ACCEPT","options":["refuse","receive","agree","collect"],"answer":"refuse","explain":"To refuse is to say no — the opposite of accepting."},{"id":"an8","level":2,"target":"SCARCE","options":["plentiful","rare","tiny","distant"],"answer":"plentiful","explain":"Scarce means in short supply; plentiful means there is lots. Rare means the same as scarce."},{"id":"an9","level":2,"target":"GENEROUS","options":["mean","kind","wasteful","polite"],"answer":"mean","explain":"Generous means giving freely; mean means unwilling to give or share."},{"id":"an10","level":2,"target":"VICTORY","options":["defeat","battle","triumph","contest"],"answer":"defeat","explain":"Defeat is the opposite of victory. Triumph means the same as victory."},{"id":"an11","level":3,"target":"TRANSPARENT","options":["opaque","clear","fragile","glossy"],"answer":"opaque","explain":"Transparent means see-through; opaque means light cannot pass through."},{"id":"an12","level":3,"target":"HUMBLE","options":["arrogant","modest","gentle","honest"],"answer":"arrogant","explain":"Humble means modest about yourself; arrogant means thinking too highly of yourself."},{"id":"an13","level":3,"target":"PERMANENT","options":["temporary","lasting","solid","ancient"],"answer":"temporary","explain":"Permanent means lasting forever; temporary means only for a short time."},{"id":"an14","level":3,"target":"ABUNDANT","options":["scarce","plentiful","generous","heavy"],"answer":"scarce","explain":"Abundant means in large amounts; scarce means in short supply."},{"id":"an15","level":3,"target":"CONCEAL","options":["reveal","hide","cover","protect"],"answer":"reveal","explain":"To conceal is to hide; to reveal is to show. Hide means the same as conceal."}],"oddOneOut":[{"id":"od1","level":1,"options":["apple","banana","carrot","cherry","plum"],"answer":"carrot","explain":"A carrot is a vegetable; the others are fruits."},{"id":"od2","level":1,"options":["run","jump","skip","chair","hop"],"answer":"chair","explain":"A chair is an object; the others are ways of moving."},{"id":"od3","level":1,"options":["red","blue","green","seven","yellow"],"answer":"seven","explain":"Seven is a number; the others are colours."},{"id":"od4","level":1,"options":["dog","cat","rabbit","sparrow","hamster"],"answer":"sparrow","explain":"A sparrow is a bird; the others are mammals kept as pets."},{"id":"od5","level":1,"options":["car","bus","lorry","van","kettle"],"answer":"kettle","explain":"A kettle is found in a kitchen; the others are road vehicles."},{"id":"od6","level":2,"options":["oak","ash","beech","rose","willow"],"answer":"rose","explain":"A rose is a flower; the others are trees."},{"id":"od7","level":2,"options":["trout","salmon","eagle","cod","herring"],"answer":"eagle","explain":"An eagle is a bird; the others are fish."},{"id":"od8","level":2,"options":["violin","cello","trumpet","guitar","harp"],"answer":"trumpet","explain":"A trumpet is a brass instrument; the others are string instruments."},{"id":"od9","level":2,"options":["France","Spain","Italy","Europe","Greece"],"answer":"Europe","explain":"Europe is a continent; the others are countries."},{"id":"od10","level":2,"options":["whisper","mutter","murmur","mumble","bellow"],"answer":"bellow","explain":"To bellow is to speak very loudly; the others mean to speak quietly."},{"id":"od11","level":3,"options":["triangle","square","circle","pentagon","hexagon"],"answer":"circle","explain":"A circle has no straight sides; the others are made of straight sides."},{"id":"od12","level":3,"options":["copper","iron","oxygen","zinc","tin"],"answer":"oxygen","explain":"Oxygen is a gas; the others are metals."},{"id":"od13","level":3,"options":["comedy","tragedy","novel","pantomime","opera"],"answer":"novel","explain":"A novel is read; the others are performed on stage."},{"id":"od14","level":3,"options":["kilometre","litre","mile","inch","centimetre"],"answer":"litre","explain":"A litre measures volume; the others measure length."},{"id":"od15","level":3,"options":["drizzle","downpour","shower","breeze","rain"],"answer":"breeze","explain":"A breeze is moving air; the others are kinds of rainfall."}],"analogy":[{"id":"ag1","level":1,"a":"Kitten","b":"cat","c":"puppy","options":["dog","bone","lead","bark"],"answer":"dog","explain":"A kitten is a young cat, and a puppy is a young dog."},{"id":"ag2","level":1,"a":"Bird","b":"fly","c":"fish","options":["swim","scale","river","boat"],"answer":"swim","explain":"A bird moves by flying; a fish moves by swimming."},{"id":"ag3","level":1,"a":"Finger","b":"hand","c":"toe","options":["foot","shoe","leg","nail"],"answer":"foot","explain":"A finger is part of a hand; a toe is part of a foot."},{"id":"ag4","level":1,"a":"Day","b":"sun","c":"night","options":["moon","dark","bed","star"],"answer":"moon","explain":"The sun is seen in the day; the moon is seen at night."},{"id":"ag5","level":1,"a":"Cow","b":"calf","c":"sheep","options":["lamb","wool","goat","farm"],"answer":"lamb","explain":"A calf is a baby cow; a lamb is a baby sheep."},{"id":"ag6","level":2,"a":"Author","b":"book","c":"sculptor","options":["statue","hammer","museum","painting"],"answer":"statue","explain":"An author creates a book; a sculptor creates a statue."},{"id":"ag7","level":2,"a":"Bee","b":"hive","c":"bird","options":["nest","wing","sky","worm"],"answer":"nest","explain":"A bee lives in a hive; a bird lives in a nest."},{"id":"ag8","level":2,"a":"Scales","b":"fish","c":"feathers","options":["bird","pillow","wing","flight"],"answer":"bird","explain":"A fish is covered in scales; a bird is covered in feathers."},{"id":"ag9","level":2,"a":"Pen","b":"write","c":"scissors","options":["cut","paper","sharp","blade"],"answer":"cut","explain":"A pen is used to write; scissors are used to cut."},{"id":"ag10","level":2,"a":"Teacher","b":"school","c":"doctor","options":["hospital","medicine","patient","nurse"],"answer":"hospital","explain":"A teacher works in a school; a doctor works in a hospital."},{"id":"ag11","level":3,"a":"Drought","b":"rain","c":"famine","options":["food","desert","hunger","farm"],"answer":"food","explain":"A drought is a lack of rain; a famine is a lack of food."},{"id":"ag12","level":3,"a":"Optimist","b":"hopeful","c":"pessimist","options":["gloomy","cheerful","clever","quiet"],"answer":"gloomy","explain":"An optimist feels hopeful; a pessimist feels gloomy."},{"id":"ag13","level":3,"a":"Centimetre","b":"length","c":"gram","options":["mass","distance","volume","temperature"],"answer":"mass","explain":"A centimetre measures length; a gram measures mass."},{"id":"ag14","level":3,"a":"Sapling","b":"tree","c":"cygnet","options":["swan","duck","river","feather"],"answer":"swan","explain":"A sapling grows into a tree; a cygnet grows into a swan."},{"id":"ag15","level":3,"a":"Visible","b":"invisible","c":"possible","options":["impossible","probable","unlikely","hidden"],"answer":"impossible","explain":"Adding the prefix turns the word into its opposite: visible/invisible, possible/impossible."}],"compound":[{"id":"cp1","level":1,"stem":"SUN","options":["flower","chair","book","door"],"answer":"flower","explain":"SUN + FLOWER makes SUNFLOWER."},{"id":"cp2","level":1,"stem":"FOOT","options":["ball","cake","lamp","rain"],"answer":"ball","explain":"FOOT + BALL makes FOOTBALL."},{"id":"cp3","level":1,"stem":"RAIN","options":["bow","cup","leaf","road"],"answer":"bow","explain":"RAIN + BOW makes RAINBOW."},{"id":"cp4","level":1,"stem":"TOOTH","options":["brush","plate","glass","spoon"],"answer":"brush","explain":"TOOTH + BRUSH makes TOOTHBRUSH."},{"id":"cp5","level":1,"stem":"BED","options":["room","floor","roof","wall"],"answer":"room","explain":"BED + ROOM makes BEDROOM."},{"id":"cp6","level":2,"stem":"NEWS","options":["paper","screen","book","card"],"answer":"paper","explain":"NEWS + PAPER makes NEWSPAPER."},{"id":"cp7","level":2,"stem":"SNOW","options":["flake","stone","leaf","cloud"],"answer":"flake","explain":"SNOW + FLAKE makes SNOWFLAKE."},{"id":"cp8","level":2,"stem":"HONEY","options":["comb","brush","cup","fork"],"answer":"comb","explain":"HONEY + COMB makes HONEYCOMB."},{"id":"cp9","level":2,"stem":"EAR","options":["ring","band","hook","loop"],"answer":"ring","explain":"EAR + RING makes EARRING."},{"id":"cp10","level":2,"stem":"BOOK","options":["case","page","pen","lid"],"answer":"case","explain":"BOOK + CASE makes BOOKCASE."},{"id":"cp11","level":3,"stem":"SHORT","options":["bread","loaf","bun","roll"],"answer":"bread","explain":"SHORT + BREAD makes SHORTBREAD — the biscuit, not actual bread."},{"id":"cp12","level":3,"stem":"WATER","options":["fall","pour","rain","wave"],"answer":"fall","explain":"WATER + FALL makes WATERFALL."},{"id":"cp13","level":3,"stem":"HAND","options":["some","many","much","lots"],"answer":"some","explain":"HAND + SOME makes HANDSOME — the meaning changes completely."},{"id":"cp14","level":3,"stem":"CUP","options":["board","plate","shelf","table"],"answer":"board","explain":"CUP + BOARD makes CUPBOARD."},{"id":"cp15","level":3,"stem":"CAR","options":["pet","dog","mat","rug"],"answer":"pet","explain":"CAR + PET makes CARPET — nothing to do with cars or pets."}],"hiddenWord":[{"id":"hw1","level":1,"sentence":"Sarah and Tom arrived first","answer":"hand","options":["hand","sand","head","said"],"explain":"saraH ANDtom — the word HAND is hidden across 'Sarah and'."},{"id":"hw2","level":1,"sentence":"Crisps and lemonade were served","answer":"sand","options":["sand","send","spam","clip"],"explain":"crispS ANDlemonade — SAND hides across 'crisps and'."},{"id":"hw3","level":1,"sentence":"Let us go at once","answer":"goat","options":["goat","gate","coat","gone"],"explain":"GO ATonce — GOAT hides across 'go at'."},{"id":"hw4","level":1,"sentence":"Please rise at dawn tomorrow","answer":"seat","options":["seat","rise","star","east"],"explain":"riSE ATdawn — SEAT hides across 'rise at'."},{"id":"hw5","level":1,"sentence":"The bus now stops here","answer":"snow","options":["snow","stop","bust","nose"],"explain":"buS NOWstops — SNOW hides across 'bus now'."},{"id":"hw6","level":2,"sentence":"Our match in the park finished late","answer":"chin","options":["chin","inch","chip","thin"],"explain":"matCH INthe — CHIN hides across 'match in'."},{"id":"hw7","level":2,"sentence":"The hero seemed very brave","answer":"rose","options":["rose","hero","seem","robe"],"explain":"heRO SEemed — ROSE hides across 'hero seemed'."},{"id":"hw8","level":2,"sentence":"We waited for ten minutes","answer":"fort","options":["fort","fore","tent","rent"],"explain":"FOR Ten — FORT hides across 'for ten'."},{"id":"hw9","level":2,"sentence":"Come along quickly please","answer":"meal","options":["meal","male","come","lane"],"explain":"coME ALong — MEAL hides across 'come along'."},{"id":"hw10","level":2,"sentence":"One engine arrived without delay","answer":"near","options":["near","gear","earn","rain"],"explain":"engiNE ARrived — NEAR hides across 'engine arrived'."},{"id":"hw11","level":3,"sentence":"We heard a short rap on the door","answer":"trap","options":["trap","drum","rapt","door"],"explain":"shorT RAPon — TRAP hides across 'short rap'."},{"id":"hw12","level":3,"sentence":"A rope around the post snapped","answer":"pear","options":["pear","rope","ears","reap"],"explain":"roPE ARound — PEAR hides across 'rope around'."},{"id":"hw13","level":3,"sentence":"My uncle is often very cheerful","answer":"soft","options":["soft","sift","often","loft"],"explain":"iS OFTen — SOFT hides across 'is often'."},{"id":"hw14","level":3,"sentence":"The blue chocolate wrapper tore","answer":"echo","options":["echo","each","chew","late"],"explain":"bluE CHOcolate — ECHO hides across 'blue chocolate'."},{"id":"hw15","level":3,"sentence":"We put both inside the cupboard","answer":"thin","options":["thin","then","both","shin"],"explain":"boTH INside — THIN hides across 'both inside'."}],"moveLetter":[{"id":"ml1","level":1,"from":"BRUSH","to":"TICK","answer":"R","options":["R","B","U","S"],"explain":"Move R: BRUSH becomes BUSH, and TICK becomes TRICK."},{"id":"ml2","level":1,"from":"PLANE","to":"RICE","answer":"P","options":["P","L","A","E"],"explain":"Move P: PLANE becomes LANE, and RICE becomes PRICE."},{"id":"ml3","level":1,"from":"STONE","to":"POT","answer":"S","options":["S","T","O","N"],"explain":"Move S: STONE becomes TONE, and POT becomes SPOT."},{"id":"ml4","level":1,"from":"CROW","to":"FIST","answer":"R","options":["R","C","O","W"],"explain":"Move R: CROW becomes COW, and FIST becomes FIRST."},{"id":"ml5","level":1,"from":"SPIN","to":"PAR","answer":"S","options":["S","P","I","N"],"explain":"Move S: SPIN becomes PIN, and PAR becomes SPAR."},{"id":"ml6","level":2,"from":"GLOVE","to":"RACE","answer":"G","options":["G","L","V","E"],"explain":"Move G: GLOVE becomes LOVE, and RACE becomes GRACE."},{"id":"ml7","level":2,"from":"SEEK","to":"FOR","answer":"K","options":["K","S","E"],"explain":"Move K: SEEK becomes SEE, and FOR becomes FORK."},{"id":"ml8","level":2,"from":"DIRTY","to":"FORT","answer":"Y","options":["Y","D","R","T"],"explain":"Move Y: DIRTY becomes DIRT, and FORT becomes FORTY."},{"id":"ml9","level":2,"from":"STOOL","to":"PIT","answer":"S","options":["S","T","O","L"],"explain":"Move S: STOOL becomes TOOL, and PIT becomes SPIT."},{"id":"ml10","level":2,"from":"STRAND","to":"SPOT","answer":"R","options":["R","S","T","D"],"explain":"Move R: STRAND becomes STAND, and SPOT becomes SPORT."},{"id":"ml11","level":3,"from":"BLOOM","to":"RUSH","answer":"B","options":["B","L","O","M"],"explain":"Move B: BLOOM becomes LOOM, and RUSH becomes BRUSH."},{"id":"ml12","level":3,"from":"SPARK","to":"TICK","answer":"S","options":["S","P","R","K"],"explain":"Move S: SPARK becomes PARK, and TICK becomes STICK."},{"id":"ml13","level":3,"from":"SCOLD","to":"HOT","answer":"S","options":["S","C","O","D"],"explain":"Move S: SCOLD becomes COLD, and HOT becomes SHOT."},{"id":"ml14","level":3,"from":"TINY","to":"ROCK","answer":"Y","options":["Y","T","I","N"],"explain":"Move Y: TINY becomes TIN, and ROCK becomes ROCKY."},{"id":"ml15","level":3,"from":"BROOM","to":"OAT","answer":"B","options":["B","R","O","M"],"explain":"Move B: BROOM becomes ROOM, and OAT becomes BOAT."}],"insertLetter":[{"id":"il1","level":1,"pairs":[["sta","ip"],["bea","ing"]],"answer":"R","options":["R","S","T","N"],"explain":"R completes both pairs: STAR / RIP and BEAR / RING."},{"id":"il2","level":1,"pairs":[["car","able"],["boa","oast"]],"answer":"T","options":["T","D","P","S"],"explain":"T completes both pairs: CART / TABLE and BOAT / TOAST."},{"id":"il3","level":1,"pairs":[["pin","gg"],["tre","dge"]],"answer":"E","options":["E","A","O","I"],"explain":"E completes both pairs: PINE / EGG and TREE / EDGE."},{"id":"il4","level":1,"pairs":[["sea","amp"],["gir","ist"]],"answer":"L","options":["L","T","R","D"],"explain":"L completes both pairs: SEAL / LAMP and GIRL / LIST."},{"id":"il5","level":2,"pairs":[["clic","now"],["bac","ing"]],"answer":"K","options":["K","T","S","N"],"explain":"K completes both pairs: CLICK / KNOW and BACK / KING."},{"id":"il6","level":2,"pairs":[["fla","oat"],["lon","ift"]],"answer":"G","options":["G","T","B","N"],"explain":"G completes both pairs: FLAG / GOAT and LONG / GIFT."},{"id":"il7","level":2,"pairs":[["moo","est"],["bar","ote"]],"answer":"N","options":["N","D","R","T"],"explain":"N completes both pairs: MOON / NEST and BARN / NOTE."},{"id":"il8","level":2,"pairs":[["wor","rum"],["sai","esk"]],"answer":"D","options":["D","K","M","T"],"explain":"D completes both pairs: WORD / DRUM and SAID / DESK."},{"id":"il9","level":2,"pairs":[["shi","age"],["lam","ond"]],"answer":"P","options":["P","N","T","B"],"explain":"P completes both pairs: SHIP / PAGE and LAMP / POND."},{"id":"il10","level":2,"pairs":[["fro","usic"],["far","oth"]],"answer":"M","options":["M","G","W","S"],"explain":"M completes both pairs: FROM / MUSIC and FARM / MOTH."},{"id":"il11","level":3,"pairs":[["lea","rost"],["shel","ence"]],"answer":"F","options":["F","D","P","T"],"explain":"F completes both pairs: LEAF / FROST and SHELF / FENCE."},{"id":"il12","level":3,"pairs":[["dis","otel"],["wis","abit"]],"answer":"H","options":["H","K","T","P"],"explain":"H completes both pairs: DISH / HOTEL and WISH / HABIT."},{"id":"il13","level":3,"pairs":[["brea","ettle"],["des","nee"]],"answer":"K","options":["K","T","D","H"],"explain":"K completes both pairs: BREAK / KETTLE and DESK / KNEE."},{"id":"il14","level":3,"pairs":[["che","ater"],["stra","ing"]],"answer":"W","options":["W","S","T","F"],"explain":"W completes both pairs: CHEW / WATER and STRAW / WING."},{"id":"il15","level":3,"pairs":[["so","ridge"],["cra","anana"]],"answer":"B","options":["B","F","P","T"],"explain":"B completes both pairs: SOB / BRIDGE and CRAB / BANANA."}],"missingThree":[{"id":"mt1","level":1,"sentence":"Mum charged both PHS overnight.","presented":"PHS","full":"PHONES","answer":"ONE","options":["ONE","OAK","OAR","ODD"],"explain":"PH + ONE + S makes PHONES."},{"id":"mt2","level":1,"sentence":"We waited ten MIES for the bus.","presented":"MIES","full":"MINUTES","answer":"NUT","options":["NUT","NET","NEW","NAP"],"explain":"MI + NUT + ES makes MINUTES."},{"id":"mt3","level":1,"sentence":"We marked the date on the CALAR.","presented":"CALAR","full":"CALENDAR","answer":"END","options":["END","EYE","EAR","EGG"],"explain":"CAL + END + AR makes CALENDAR."},{"id":"mt4","level":1,"sentence":"We went to Spain for our summer HOAY.","presented":"HOAY","full":"HOLIDAY","answer":"LID","options":["LID","LIP","LAD","LED"],"explain":"HO + LID + AY makes HOLIDAY."},{"id":"mt5","level":1,"sentence":"We solved the maths PLEM together.","presented":"PLEM","full":"PROBLEM","answer":"ROB","options":["ROB","RIB","ROD","ROT"],"explain":"P + ROB + LEM makes PROBLEM."},{"id":"mt6","level":2,"sentence":"London is the CAAL of England.","presented":"CAAL","full":"CAPITAL","answer":"PIT","options":["PIT","PET","PIE","PIG"],"explain":"CA + PIT + AL makes CAPITAL."},{"id":"mt7","level":2,"sentence":"Piano PRACE takes twenty minutes a day.","presented":"PRACE","full":"PRACTICE","answer":"TIC","options":["TIC","TIN","TIP","TAP"],"explain":"PRAC + TIC + E makes PRACTICE."},{"id":"mt8","level":2,"sentence":"The player moved into a good POION.","presented":"POION","full":"POSITION","answer":"SIT","options":["SIT","SET","SIX","SAT"],"explain":"PO + SIT + ION makes POSITION."},{"id":"mt9","level":2,"sentence":"The STUTS lined up for assembly.","presented":"STUTS","full":"STUDENTS","answer":"DEN","options":["DEN","DEW","DAY","DOG"],"explain":"STU + DEN + TS makes STUDENTS."},{"id":"mt10","level":2,"sentence":"She moved up to the ADCED group.","presented":"ADCED","full":"ADVANCED","answer":"VAN","options":["VAN","VET","VOW","ANT"],"explain":"AD + VAN + CED makes ADVANCED."},{"id":"mt11","level":3,"sentence":"The computers were joined in a NERK.","presented":"NERK","full":"NETWORK","answer":"TWO","options":["TWO","TOE","TOP","TOY"],"explain":"NE + TWO + RK makes NETWORK."},{"id":"mt12","level":3,"sentence":"It took ages to DLOAD the game.","presented":"DLOAD","full":"DOWNLOAD","answer":"OWN","options":["OWN","ONE","OWL","OAK"],"explain":"D + OWN + LOAD makes DOWNLOAD."},{"id":"mt13","level":3,"sentence":"The plant showed rapid GTH.","presented":"GTH","full":"GROWTH","answer":"ROW","options":["ROW","RAW","ROD","ROT"],"explain":"G + ROW + TH makes GROWTH."},{"id":"mt14","level":3,"sentence":"Suncream gives PECTION from the sun.","presented":"PECTION","full":"PROTECTION","answer":"ROT","options":["ROT","RAT","ROD","ROW"],"explain":"P + ROT + ECTION makes PROTECTION."},{"id":"mt15","level":3,"sentence":"Every child deserves a good EDUION.","presented":"EDUION","full":"EDUCATION","answer":"CAT","options":["CAT","CAN","CAP","CAR"],"explain":"EDU + CAT + ION makes EDUCATION."}],"doubleMeaning":[{"id":"dm1","level":1,"pairA":["bounce","jump"],"pairB":["coil","metal spiral"],"options":["spring","hop","wire","summer"],"answer":"spring","explain":"You can SPRING into the air, and a SPRING is a coil of metal."},{"id":"dm2","level":1,"pairA":["glow","brightness"],"pairB":["not heavy","easy to lift"],"options":["light","lamp","feather","shine"],"answer":"light","explain":"LIGHT means brightness, and LIGHT also means not heavy."},{"id":"dm3","level":1,"pairA":["river edge","side of a stream"],"pairB":["place for money","where you save"],"options":["bank","shore","safe","shop"],"answer":"bank","explain":"A river has a BANK, and money is kept in a BANK."},{"id":"dm4","level":1,"pairA":["dog's cry","woof"],"pairB":["tree covering","trunk skin"],"options":["bark","howl","leaf","wood"],"answer":"bark","explain":"A dog BARKS, and BARK covers a tree trunk."},{"id":"dm5","level":1,"pairA":["cricket equipment","used to hit a ball"],"pairB":["flying mammal","night creature"],"options":["bat","glove","owl","club"],"answer":"bat","explain":"You hit a ball with a BAT, and a BAT flies at night."},{"id":"dm6","level":2,"pairA":["part of a tree","bough"],"pairB":["local shop or office","part of a company"],"options":["branch","trunk","store","root"],"answer":"branch","explain":"A tree has a BRANCH, and a bank has a local BRANCH."},{"id":"dm7","level":2,"pairA":["leader","person in charge"],"pairB":["top of the body","where your brain is"],"options":["head","chief","skull","crown"],"answer":"head","explain":"The HEAD teacher is in charge, and your HEAD is the top of your body."},{"id":"dm8","level":2,"pairA":["correct","accurate"],"pairB":["opposite of left","one side"],"options":["right","true","wrong","side"],"answer":"right","explain":"RIGHT means correct, and RIGHT is the opposite of left."},{"id":"dm9","level":2,"pairA":["bird's limb","used to fly"],"pairB":["part of a building","side section"],"options":["wing","beak","tower","roof"],"answer":"wing","explain":"A bird has a WING, and a building can have a WING."},{"id":"dm10","level":2,"pairA":["writing tool","filled with ink"],"pairB":["animal enclosure","where pigs live"],"options":["pen","pencil","cage","sty"],"answer":"pen","explain":"You write with a PEN, and animals are kept in a PEN."},{"id":"dm11","level":3,"pairA":["strike with the foot","boot the ball"],"pairB":["thrill","burst of excitement"],"options":["kick","punch","rush","goal"],"answer":"kick","explain":"You KICK a ball, and you can get a KICK out of something exciting."},{"id":"dm12","level":3,"pairA":["large stone","boulder"],"pairB":["sway gently","move from side to side"],"options":["rock","cliff","swing","stone"],"answer":"rock","explain":"A ROCK is a large stone, and you can ROCK a baby to sleep."},{"id":"dm13","level":3,"pairA":["inside of the hand","where lines are read"],"pairB":["tropical tree","grows coconuts"],"options":["palm","wrist","fern","oak"],"answer":"palm","explain":"Your PALM is part of your hand, and a PALM is a tropical tree."},{"id":"dm14","level":3,"pairA":["to depart","go away"],"pairB":["time off work","a holiday"],"options":["leave","exit","break","travel"],"answer":"leave","explain":"To LEAVE is to go, and workers take annual LEAVE."},{"id":"dm15","level":3,"pairA":["matching set of clothes","jacket and trousers"],"pairB":["one of four in a pack of cards","hearts or spades"],"options":["suit","outfit","deck","dress"],"answer":"suit","explain":"You wear a SUIT, and hearts is a SUIT in cards."}]};</p>
+<p class="p2"><br></p>
+<p class="p1">/* ================= PROCEDURAL GENERATORS (tested: 9,000 runs, 0 failures) ======== */</p>
+<p class="p1">// Procedural generators for letter/number/code question types.</p>
+<p class="p1">// Pure functions, no imports — this source is spliced verbatim into the app.</p>
+<p class="p2"><br></p>
+<p class="p1">function mulberry32(seed){let t=seed&gt;&gt;&gt;0;return function(){t+=0x6D2B79F5;let r=Math.imul(t^(t&gt;&gt;&gt;15),1|t);r^=r+Math.imul(r^(r&gt;&gt;&gt;7),61|r);return((r^(r&gt;&gt;&gt;14))&gt;&gt;&gt;0)/4294967296;};}</p>
+<p class="p1">function makeRng(){return mulberry32(Math.floor(Math.random()*2147483647));}</p>
+<p class="p1">function ri(rng,a,b){return a+Math.floor(rng()*(b-a+1));}</p>
+<p class="p1">function pk(rng,arr){return arr[Math.floor(rng()*arr.length)];}</p>
+<p class="p1">function shuf(rng,arr){const a=arr.slice();for(let i=a.length-1;i&gt;0;i--){const j=Math.floor(rng()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}</p>
+<p class="p1">const ABC="ABCDEFGHIJKLMNOPQRSTUVWXYZ";</p>
+<p class="p1">const L=i=&gt;ABC[i];</p>
+<p class="p1">const IX=c=&gt;ABC.indexOf(c);</p>
+<p class="p2"><br></p>
+<p class="p1">function finalize(rng,q,answer,rawDistractors){</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const opts=[answer];</p>
+<p class="p1"><span class="Apple-converted-space">  </span>for(const d of rawDistractors){</p>
+<p class="p1"><span class="Apple-converted-space">    </span>if(opts.length&gt;=4)break;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>if(d!==null&amp;&amp;d!==undefined&amp;&amp;d!==answer&amp;&amp;!opts.includes(d))opts.push(d);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>let guard=0;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>while(opts.length&lt;4&amp;&amp;guard++&lt;50){</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const d=q._fallback(rng);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>if(d!==answer&amp;&amp;!opts.includes(d))opts.push(d);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>delete q._fallback;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>q.options=shuf(rng,opts);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>q.answer=answer;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>return q;</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">// ---------- 1. Letter sequences ----------</p>
+<p class="p1">function genLetterSeq(level,rng){</p>
+<p class="p1"><span class="Apple-converted-space">  </span>for(let attempt=0;attempt&lt;200;attempt++){</p>
+<p class="p1"><span class="Apple-converted-space">    </span>if(level===1||(level===2&amp;&amp;rng()&lt;0.4)){</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const s=pk(rng,level===1?[1,2,3,-1,-2,-3]:[4,5,-4,-5]);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const span=4*s, lo=Math.max(0,-span), hi=Math.min(25,25-span);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>if(lo&gt;hi)continue;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const st=ri(rng,lo,hi);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const terms=[0,1,2,3,4].map(k=&gt;st+k*s);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>if(terms.some(t=&gt;t&lt;0||t&gt;25))continue;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const seq=terms.slice(0,4).map(L), ans=L(terms[4]);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const q={prompt:"What comes next in this sequence?",mono:seq.join(" <span class="Apple-converted-space">  </span>")+" <span class="Apple-converted-space">  </span>?",alphabet:true,</p>
+<p class="p1"><span class="Apple-converted-space">        </span>explain:"Each letter moves on "+(s&gt;0?s+" place"+(s===1?"":"s"):Math.abs(s)+" place"+(s===-1?"":"s")+" back")+" each time: "+seq.join(" → ")+" → "+ans+".",</p>
+<p class="p1"><span class="Apple-converted-space">        </span>_fallback:r=&gt;L(ri(r,0,25))};</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const d=[terms[4]+1,terms[4]-1,terms[4]+s].filter(t=&gt;t&gt;=0&amp;&amp;t&lt;=25).map(L);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>return finalize(rng,q,ans,d);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>if(level===2&amp;&amp;rng()&lt;0.5){</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const s1=pk(rng,[1,2,3]),s2=pk(rng,[-1,-2,1,2,3].filter(x=&gt;x!==s1));</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const steps=[s1,s2,s1,s2];</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const st=ri(rng,0,25);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const terms=[st];for(const s of steps)terms.push(terms[terms.length-1]+s);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>if(terms.some(t=&gt;t&lt;0||t&gt;25))continue;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const seq=terms.slice(0,4).map(L),ans=L(terms[4]);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const q={prompt:"What comes next in this sequence?",mono:seq.join(" <span class="Apple-converted-space">  </span>")+" <span class="Apple-converted-space">  </span>?",alphabet:true,</p>
+<p class="p1"><span class="Apple-converted-space">        </span>explain:"The steps alternate: "+(s1&gt;0?"+":"")+s1+" then "+(s2&gt;0?"+":"")+s2+". "+seq.join(" → ")+" → "+ans+".",</p>
+<p class="p1"><span class="Apple-converted-space">        </span>_fallback:r=&gt;L(ri(r,0,25))};</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const d=[terms[4]+1,terms[4]-1,terms[3]+s1+(s2&gt;0?1:-1)].filter(t=&gt;t&gt;=0&amp;&amp;t&lt;=25).map(L);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>return finalize(rng,q,ans,d);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>if(level===2){</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const s=pk(rng,[1,2,-1,-2]);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const gap=ri(rng,1,3);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const span=4*s, lo1=Math.max(0,-span), hi1=Math.min(25,25-span)-gap;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>if(lo1&gt;hi1)continue;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const st=ri(rng,lo1,hi1);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const pairs=[0,1,2,3,4].map(k=&gt;[st+k*s,st+gap+k*s]);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>if(pairs.some(p=&gt;p[0]&lt;0||p[1]&gt;25||p[0]&gt;25||p[1]&lt;0))continue;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const seq=pairs.slice(0,4).map(p=&gt;L(p[0])+L(p[1])),ans=L(pairs[4][0])+L(pairs[4][1]);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const q={prompt:"What comes next in this sequence of letter pairs?",mono:seq.join(" <span class="Apple-converted-space">  </span>")+" <span class="Apple-converted-space">  </span>?",alphabet:true,</p>
+<p class="p1"><span class="Apple-converted-space">        </span>explain:"Both letters in the pair move "+(s&gt;0?"+"+s:s)+" each time: "+seq.join(" → ")+" → "+ans+".",</p>
+<p class="p1"><span class="Apple-converted-space">        </span>_fallback:r=&gt;{const a=ri(r,0,24);return L(a)+L(ri(r,a,25));}};</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const d=[L(pairs[4][0])+L(Math.min(25,pairs[4][1]+1)),L(Math.max(0,pairs[4][0]-1))+L(pairs[4][1]),L(pairs[4][0]+ (s&gt;0?-1:1))+L(pairs[4][1]+(s&gt;0?-1:1))].filter(x=&gt;x.length===2&amp;&amp;!x.includes("undefined"));</p>
+<p class="p1"><span class="Apple-converted-space">      </span>return finalize(rng,q,ans,d);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>if(rng()&lt;0.5){ // L3 pairs, different deltas</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const s1=pk(rng,[1,2,3,-1,-2]),s2=pk(rng,[1,2,3,-1,-2,-3].filter(x=&gt;x!==s1));</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const st1=ri(rng,Math.max(0,-4*s1),Math.min(25,25-4*s1));</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const st2=ri(rng,Math.max(0,-4*s2),Math.min(25,25-4*s2));</p>
+<p class="p1"><span class="Apple-converted-space">      </span>if(st1&lt;0||st2&lt;0)continue;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const pairs=[0,1,2,3,4].map(k=&gt;[st1+k*s1,st2+k*s2]);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>if(pairs.some(p=&gt;p[0]&lt;0||p[0]&gt;25||p[1]&lt;0||p[1]&gt;25))continue;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const seq=pairs.slice(0,4).map(p=&gt;L(p[0])+L(p[1])),ans=L(pairs[4][0])+L(pairs[4][1]);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const q={prompt:"What comes next in this sequence of letter pairs?",mono:seq.join(" <span class="Apple-converted-space">  </span>")+" <span class="Apple-converted-space">  </span>?",alphabet:true,</p>
+<p class="p1"><span class="Apple-converted-space">        </span>explain:"The first letters move "+(s1&gt;0?"+"+s1:s1)+", the second letters move "+(s2&gt;0?"+"+s2:s2)+": next pair is "+ans+".",</p>
+<p class="p1"><span class="Apple-converted-space">        </span>_fallback:r=&gt;{const a=ri(r,0,25);return L(a)+L(ri(r,0,25));}};</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const d=[L(pairs[4][0])+L(Math.max(0,Math.min(25,pairs[4][1]-s2))),L(Math.max(0,Math.min(25,pairs[4][0]+1)))+L(pairs[4][1]),L(pairs[4][0])+L(Math.max(0,Math.min(25,pairs[4][1]+1)))];</p>
+<p class="p1"><span class="Apple-converted-space">      </span>return finalize(rng,q,ans,d);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>{ // L3 increasing step</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const base=ri(rng,1,2),dir=pk(rng,[1,-1]);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const steps=[base,base+1,base+2,base+3].map(x=&gt;x*dir);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const tot=steps.reduce((a,b)=&gt;a+b,0);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const lo=Math.max(0,-tot),hi=Math.min(25,25-tot);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>if(lo&gt;hi)continue;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const st=ri(rng,lo,hi);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const terms=[st];for(const s of steps)terms.push(terms[terms.length-1]+s);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>if(terms.some(t=&gt;t&lt;0||t&gt;25))continue;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const seq=terms.slice(0,4).map(L),ans=L(terms[4]);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const q={prompt:"What comes next in this sequence?",mono:seq.join(" <span class="Apple-converted-space">  </span>")+" <span class="Apple-converted-space">  </span>?",alphabet:true,</p>
+<p class="p1"><span class="Apple-converted-space">        </span>explain:"The step grows by one each time ("+steps.slice(0,3).map(s=&gt;(s&gt;0?"+":"")+s).join(", ")+"…), so the next step is "+(steps[3]&gt;0?"+":"")+steps[3]+", giving "+ans+".",</p>
+<p class="p1"><span class="Apple-converted-space">        </span>_fallback:r=&gt;L(ri(r,0,25))};</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const d=[terms[4]+dir,terms[4]-dir,terms[3]+steps[2]].filter(t=&gt;t&gt;=0&amp;&amp;t&lt;=25).map(L);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>return finalize(rng,q,ans,d);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>throw new Error("letterSeq generation failed");</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">// ---------- 2. Number sequences ----------</p>
+<p class="p1">function genNumberSeq(level,rng){</p>
+<p class="p1"><span class="Apple-converted-space">  </span>for(let attempt=0;attempt&lt;200;attempt++){</p>
+<p class="p1"><span class="Apple-converted-space">    </span>let terms,explain;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>if(level===1){</p>
+<p class="p1"><span class="Apple-converted-space">      </span>if(rng()&lt;0.7){const s=pk(rng,[2,3,4,5,6,7,8,9,-2,-3,-4,-5]);const st=s&gt;0?ri(rng,1,30):ri(rng,30,60);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>terms=[0,1,2,3,4].map(k=&gt;st+k*s);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>explain="The numbers go "+(s&gt;0?"up":"down")+" in "+Math.abs(s)+"s: "+terms.slice(0,4).join(", ")+" … so the next is "+terms[4]+".";</p>
+<p class="p1"><span class="Apple-converted-space">      </span>}else{const st=ri(rng,1,4);terms=[0,1,2,3,4].map(k=&gt;st*Math.pow(2,k));</p>
+<p class="p1"><span class="Apple-converted-space">        </span>explain="Each number doubles: "+terms.slice(0,4).join(", ")+" … so the next is "+terms[4]+".";}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}else if(level===2){</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const mode=ri(rng,1,3);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>if(mode===1){const a=ri(rng,2,9);let b=ri(rng,2,9);if(b===a)b=a+1;const st=ri(rng,1,20);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>terms=[st];for(let k=0;k&lt;4;k++)terms.push(terms[terms.length-1]+(k%2===0?a:b));</p>
+<p class="p1"><span class="Apple-converted-space">        </span>explain="The steps alternate: +"+a+" then +"+b+". Next step is +"+(4%2===0?a:b)+", giving "+terms[4]+".";</p>
+<p class="p1"><span class="Apple-converted-space">      </span>}else if(mode===2){const c=ri(rng,1,3);const st=ri(rng,1,5);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>terms=[st];for(let k=0;k&lt;4;k++)terms.push(terms[terms.length-1]*2+c);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>if(terms[4]&gt;400)continue;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>explain="Each number is double the one before, plus "+c+". So next is "+terms[3]+" × 2 + "+c+" = "+terms[4]+".";</p>
+<p class="p1"><span class="Apple-converted-space">      </span>}else{const k0=ri(rng,1,8);terms=[0,1,2,3,4].map(k=&gt;(k0+k)*(k0+k));</p>
+<p class="p1"><span class="Apple-converted-space">        </span>explain="These are square numbers: "+(k0)+"², "+(k0+1)+"², … so the next is "+(k0+4)+"² = "+terms[4]+".";}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}else{</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const mode=ri(rng,1,3);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>if(mode===1){let a=ri(rng,1,9),b=ri(rng,1,9);terms=[a,b];for(let k=0;k&lt;4;k++)terms.push(terms[terms.length-1]+terms[terms.length-2]);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>explain="Each number is the sum of the two before it: "+terms[3]+" + "+terms[4]+" = "+terms[5]+".";</p>
+<p class="p1"><span class="Apple-converted-space">      </span>}else if(mode===2){const d=ri(rng,1,4),e=ri(rng,1,3);const st=ri(rng,1,15);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>terms=[st];for(let k=0;k&lt;4;k++)terms.push(terms[terms.length-1]+d+k*e);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>explain="The gap grows by "+e+" each time (+"+d+", +"+(d+e)+", +"+(d+2*e)+"…), so the next number is "+terms[4]+".";</p>
+<p class="p1"><span class="Apple-converted-space">      </span>}else{const sA=ri(rng,2,6),sB=ri(rng,2,6);const a0=ri(rng,1,15),b0=ri(rng,1,15);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>terms=[];for(let k=0;k&lt;7;k++)terms.push(k%2===0?a0+(k/2)*sA:b0+((k-1)/2)*sB);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>explain="Two sequences take turns: the 1st, 3rd, 5th… numbers go up in "+sA+"s, and the 2nd, 4th, 6th… go up in "+sB+"s. The next belongs to the first sequence: "+terms[6]+".";}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const shown=terms.slice(0,terms.length-1),ans=terms[terms.length-1];</p>
+<p class="p1"><span class="Apple-converted-space">    </span>if(terms.some(t=&gt;t&lt;0||t&gt;900||!Number.isInteger(t)))continue;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const q={prompt:"What comes next in this sequence?",mono:shown.join(",<span class="Apple-converted-space">  </span>")+",<span class="Apple-converted-space">  </span>?",alphabet:false,explain,</p>
+<p class="p1"><span class="Apple-converted-space">      </span>_fallback:r=&gt;String(ans+ri(r,2,15))};</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const gap=ans-shown[shown.length-1];</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const d=[ans+1,ans-1,shown[shown.length-1]+Math.max(1,Math.abs(gap)-1),ans+2].filter(x=&gt;x&gt;=0&amp;&amp;x!==ans).map(String);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>return finalize(rng,q,String(ans),d);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>throw new Error("numberSeq generation failed");</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">// ---------- 3. Word codes ----------</p>
+<p class="p1">const W3=["CAT","DOG","SUN","PEN","HAT","BED","CUP","MAP","LEG","JAM","FOX","WEB","ANT","LOG","GEM","BUS","VAN","PIG","OWL","KEY","EGG","INK","OAK","TIN","NUT","FIG","HEN","JAR","KIT","LIP","MUD","NET","PAN","RAT","RUG","SAW","TAP","FAN","BAG","COT"];</p>
+<p class="p1">const W4=["FISH","FROG","LAMP","DESK","MILK","RING","SONG","WIND","GOLD","PARK","FARM","BIRD","CAKE","DOOR","HAND","KING","LION","MOON","NEST","RAIN","SHIP","TREE","STAR","WOLF","DRUM","KITE","BOAT","COAT","ROSE","SAND","BELL","FORK","GATE","HILL","JUMP","LEAF","MASK","POND","TENT","WING"];</p>
+<p class="p1">function shiftWord(w,s){let out="";for(const c of w){const i=IX(c)+s;if(i&lt;0||i&gt;25)return null;out+=L(i);}return out;}</p>
+<p class="p1">function mirrorWord(w){let out="";for(const c of w)out+=L(25-IX(c));return out;}</p>
+<p class="p1">function patternWord(w,dir){let out="";for(let i=0;i&lt;w.length;i++){const j=IX(w[i])+dir*(i+1);if(j&lt;0||j&gt;25)return null;out+=L(j);}return out;}</p>
+<p class="p1">function genWordCode(level,rng){</p>
+<p class="p1"><span class="Apple-converted-space">  </span>for(let attempt=0;attempt&lt;400;attempt++){</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const pool=level===1?W3:(rng()&lt;0.5?W3:W4);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const a=pk(rng,pool);let b=pk(rng,pool);if(b===a)continue;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>let codeA,codeB,ruleName,explainRule,wrong;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>if(level===1){</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const s=pk(rng,[1,-1]);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>codeA=shiftWord(a,s);codeB=shiftWord(b,s);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>if(!codeA||!codeB)continue;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>explainRule="each letter moves "+(s&gt;0?"forward 1 place":"back 1 place")+" in the alphabet";</p>
+<p class="p1"><span class="Apple-converted-space">      </span>wrong=r=&gt;shiftWord(b,pk(r,[s+1,s-1,-s].filter(x=&gt;x!==0)))||shiftWord(b,2*s)||null;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}else if(level===2){</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const s=pk(rng,[2,3,-2,-3]);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>codeA=shiftWord(a,s);codeB=shiftWord(b,s);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>if(!codeA||!codeB)continue;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>explainRule="each letter moves "+(s&gt;0?"forward "+s+" places":"back "+Math.abs(s)+" places");</p>
+<p class="p1"><span class="Apple-converted-space">      </span>wrong=r=&gt;shiftWord(b,pk(r,[s+1,s-1,-s]))||null;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}else{</p>
+<p class="p1"><span class="Apple-converted-space">      </span>if(rng()&lt;0.5){codeA=mirrorWord(a);codeB=mirrorWord(b);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>explainRule="each letter swaps with its mirror letter from the other end of the alphabet (A↔Z, B↔Y, C↔X…)";</p>
+<p class="p1"><span class="Apple-converted-space">        </span>wrong=r=&gt;{const i=ri(r,0,b.length-1);const m=mirrorWord(b);const j=Math.min(25,Math.max(0,IX(m[i])+pk(r,[1,-1])));return m.slice(0,i)+L(j)+m.slice(i+1);};</p>
+<p class="p1"><span class="Apple-converted-space">      </span>}else{const dir=pk(rng,[1,-1]);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>codeA=patternWord(a,dir);codeB=patternWord(b,dir);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>if(!codeA||!codeB)continue;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>explainRule="the letters move "+(dir&gt;0?"+1, +2, +3…":"−1, −2, −3…")+" in turn";</p>
+<p class="p1"><span class="Apple-converted-space">        </span>wrong=r=&gt;shiftWord(b,dir*pk(r,[1,2]))||patternWord(b,-dir)||null;}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const decode=level&gt;=2&amp;&amp;rng()&lt;0.5;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>if(decode){</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const others=shuf(rng,pool.filter(w=&gt;w!==b&amp;&amp;w!==a&amp;&amp;w.length===b.length)).slice(0,3);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const q={prompt:"In this code, the word "+a+" is written as "+codeA+". What word does the code "+codeB+" stand for?",mono:a+"<span class="Apple-converted-space">  </span>→<span class="Apple-converted-space">  </span>"+codeA,alphabet:true,</p>
+<p class="p1"><span class="Apple-converted-space">        </span>explain:"In this code "+explainRule+". Working backwards, "+codeB+" spells "+b+".",</p>
+<p class="p1"><span class="Apple-converted-space">        </span>_fallback:r=&gt;pk(r,pool.filter(w=&gt;w.length===b.length))};</p>
+<p class="p1"><span class="Apple-converted-space">      </span>return finalize(rng,q,b,others);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const q={prompt:"In this code, the word "+a+" is written as "+codeA+". How would you write "+b+" in the same code?",mono:a+"<span class="Apple-converted-space">  </span>→<span class="Apple-converted-space">  </span>"+codeA,alphabet:true,</p>
+<p class="p1"><span class="Apple-converted-space">      </span>explain:"In this code "+explainRule+", so "+b+" becomes "+codeB+".",</p>
+<p class="p1"><span class="Apple-converted-space">      </span>_fallback:r=&gt;{const i=ri(r,0,codeB.length-1);const j=Math.min(25,Math.max(0,IX(codeB[i])+pk(r,[1,-1,2])));return codeB.slice(0,i)+L(j)+codeB.slice(i+1);}};</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const d=[wrong(rng),wrong(rng),wrong(rng)];</p>
+<p class="p1"><span class="Apple-converted-space">    </span>return finalize(rng,q,codeB,d);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>throw new Error("wordCode generation failed");</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">// ---------- 4. Letter sums (A=1 … Z=26) ----------</p>
+<p class="p1">function genLetterSum(level,rng){</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const val=c=&gt;IX(c)+1;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>for(let attempt=0;attempt&lt;200;attempt++){</p>
+<p class="p1"><span class="Apple-converted-space">    </span>if(level===1){</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const a=L(ri(rng,0,9)),b=L(ri(rng,0,9));</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const ans=val(a)+val(b);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const q={prompt:"If A = 1, B = 2, C = 3 and so on, what is "+a+" + "+b+"?",mono:a+" + "+b+" = ?",alphabet:true,</p>
+<p class="p1"><span class="Apple-converted-space">        </span>explain:a+" = "+val(a)+" and "+b+" = "+val(b)+", so "+a+" + "+b+" = "+ans+".",</p>
+<p class="p1"><span class="Apple-converted-space">        </span>_fallback:r=&gt;String(ans+ri(r,1,6))};</p>
+<p class="p1"><span class="Apple-converted-space">      </span>return finalize(rng,q,String(ans),[ans+1,ans-1,ans+2].map(String));</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>if(level===2){</p>
+<p class="p1"><span class="Apple-converted-space">      </span>if(rng()&lt;0.5){</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const a=L(ri(rng,8,19)),b=L(ri(rng,0,7));</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const op=pk(rng,["+","−"]);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const ans=op==="+"?val(a)+val(b):val(a)-val(b);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>if(ans&lt;1)continue;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const q={prompt:"If A = 1, B = 2, C = 3 and so on, what is "+a+" "+op+" "+b+"?",mono:a+" "+op+" "+b+" = ?",alphabet:true,</p>
+<p class="p1"><span class="Apple-converted-space">          </span>explain:a+" = "+val(a)+" and "+b+" = "+val(b)+", so the answer is "+ans+".",</p>
+<p class="p1"><span class="Apple-converted-space">          </span>_fallback:r=&gt;String(Math.max(1,ans+ri(r,1,5)))};</p>
+<p class="p1"><span class="Apple-converted-space">        </span>return finalize(rng,q,String(ans),[ans+1,ans-1,ans+2].map(String));</p>
+<p class="p1"><span class="Apple-converted-space">      </span>}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const a=L(ri(rng,0,11)),b=L(ri(rng,0,11));</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const sum=val(a)+val(b);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>if(sum&gt;26)continue;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const ans=L(sum-1);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const q={prompt:"If A = 1, B = 2, C = 3 and so on, which letter has the same value as "+a+" + "+b+"?",mono:a+" + "+b+" = ?",alphabet:true,</p>
+<p class="p1"><span class="Apple-converted-space">        </span>explain:a+" ("+val(a)+") + "+b+" ("+val(b)+") = "+sum+", and the letter with value "+sum+" is "+ans+".",</p>
+<p class="p1"><span class="Apple-converted-space">        </span>_fallback:r=&gt;L(ri(r,0,25))};</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const d=[sum,sum-2,sum+1].filter(x=&gt;x&gt;=1&amp;&amp;x&lt;=26).map(x=&gt;L(x-1));</p>
+<p class="p1"><span class="Apple-converted-space">      </span>return finalize(rng,q,ans,d);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const a=L(ri(rng,2,12)),b=L(ri(rng,2,12)),c=L(ri(rng,0,9));</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const res=val(a)+val(b)-val(c);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>if(res&lt;1||res&gt;26)continue;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const ans=L(res-1);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const q={prompt:"If A = 1, B = 2, C = 3 and so on, which letter has the same value as "+a+" + "+b+" − "+c+"?",mono:a+" + "+b+" − "+c+" = ?",alphabet:true,</p>
+<p class="p1"><span class="Apple-converted-space">      </span>explain:val(a)+" + "+val(b)+" − "+val(c)+" = "+res+", and the letter with value "+res+" is "+ans+".",</p>
+<p class="p1"><span class="Apple-converted-space">      </span>_fallback:r=&gt;L(ri(r,0,25))};</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const d=[res,res-2,res+1].filter(x=&gt;x&gt;=1&amp;&amp;x&lt;=26).map(x=&gt;L(x-1));</p>
+<p class="p1"><span class="Apple-converted-space">    </span>return finalize(rng,q,ans,d);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>throw new Error("letterSum generation failed");</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">// ---------- 5. Related numbers ----------</p>
+<p class="p1">const RN_RULES=[</p>
+<p class="p1"><span class="Apple-converted-space">  </span>{id:"add",lv:1,f:(a,b)=&gt;a+b,ok:(a,b)=&gt;true,text:"the first number plus the second",eg:(a,b,m)=&gt;a+" + "+b+" = "+m},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>{id:"sub",lv:1,f:(a,b)=&gt;b-a,ok:(a,b)=&gt;b&gt;a,text:"the second number minus the first",eg:(a,b,m)=&gt;b+" − "+a+" = "+m},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>{id:"mult",lv:2,f:(a,b)=&gt;a*b,ok:(a,b)=&gt;a&lt;=7&amp;&amp;b&lt;=7,text:"the first number times the second",eg:(a,b,m)=&gt;a+" × "+b+" = "+m},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>{id:"half",lv:2,f:(a,b)=&gt;(a+b)/2,ok:(a,b)=&gt;(a+b)%2===0,text:"half of the two numbers added together",eg:(a,b,m)=&gt;"("+a+" + "+b+") ÷ 2 = "+m},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>{id:"twoAplusB",lv:2,f:(a,b)=&gt;2*a+b,ok:(a,b)=&gt;true,text:"double the first number, plus the second",eg:(a,b,m)=&gt;"2 × "+a+" + "+b+" = "+m},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>{id:"sumTimes2",lv:3,f:(a,b)=&gt;(a+b)*2,ok:(a,b)=&gt;a+b&lt;=20,text:"the two numbers added together, then doubled",eg:(a,b,m)=&gt;"("+a+" + "+b+") × 2 = "+m},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>{id:"multMinusA",lv:3,f:(a,b)=&gt;a*b-a,ok:(a,b)=&gt;a&lt;=7&amp;&amp;b&lt;=7,text:"the first times the second, minus the first",eg:(a,b,m)=&gt;a+" × "+b+" − "+a+" = "+m},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>{id:"multPlusSum",lv:3,f:(a,b)=&gt;a*b+a+b,ok:(a,b)=&gt;a&lt;=6&amp;&amp;b&lt;=6,text:"the first times the second, plus both numbers",eg:(a,b,m)=&gt;a+" × "+b+" + "+a+" + "+b+" = "+m},</p>
+<p class="p1">];</p>
+<p class="p1">function genRelatedNumbers(level,rng){</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const rules=RN_RULES.filter(r=&gt;r.lv===level);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>for(let attempt=0;attempt&lt;400;attempt++){</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const R=pk(rng,rules);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const mk=()=&gt;{for(let t=0;t&lt;60;t++){const a=ri(rng,2,9),b=ri(rng,2,12);if(R.ok(a,b)&amp;&amp;R.f(a,b)&gt;=1&amp;&amp;R.f(a,b)&lt;=99&amp;&amp;Number.isInteger(R.f(a,b)))return[a,b];}return null;};</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const p1=mk(),p2=mk(),pq=mk();</p>
+<p class="p1"><span class="Apple-converted-space">    </span>if(!p1||!p2||!pq)continue;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>if((p1[0]===p2[0]&amp;&amp;p1[1]===p2[1])||(p1[0]===pq[0]&amp;&amp;p1[1]===pq[1])||(p2[0]===pq[0]&amp;&amp;p2[1]===pq[1]))continue;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const m1=R.f(...p1),m2=R.f(...p2),ans=R.f(...pq);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>let collision=false;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>for(const R2 of RN_RULES){</p>
+<p class="p1"><span class="Apple-converted-space">      </span>if(R2.id===R.id)continue;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>if(R2.ok(...p1)&amp;&amp;R2.ok(...p2)&amp;&amp;R2.f(...p1)===m1&amp;&amp;R2.f(...p2)===m2&amp;&amp;Number.isInteger(R2.f(...p1))){</p>
+<p class="p1"><span class="Apple-converted-space">        </span>if(!R2.ok(...pq)||R2.f(...pq)!==ans){collision=true;break;}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>if(collision)continue;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const tri=(a,m,b)=&gt;"( "+a+"<span class="Apple-converted-space">  </span>[ "+m+" ]<span class="Apple-converted-space">  </span>"+b+" )";</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const q={prompt:"The three numbers in each group are related in the same way. What number replaces the question mark?",</p>
+<p class="p1"><span class="Apple-converted-space">      </span>mono:tri(p1[0],m1,p1[1])+" <span class="Apple-converted-space">  </span>"+tri(p2[0],m2,p2[1])+" <span class="Apple-converted-space">  </span>"+tri(pq[0],"?",pq[1]),alphabet:false,</p>
+<p class="p1"><span class="Apple-converted-space">      </span>explain:"In each group, the middle number is "+R.text+": "+R.eg(p1[0],p1[1],m1)+" and "+R.eg(p2[0],p2[1],m2)+". So here it is "+R.eg(pq[0],pq[1],ans)+".",</p>
+<p class="p1"><span class="Apple-converted-space">      </span>_fallback:r=&gt;String(ans+ri(r,1,9))};</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const d=[];</p>
+<p class="p1"><span class="Apple-converted-space">    </span>for(const R2 of RN_RULES){if(R2.id!==R.id&amp;&amp;R2.ok(...pq)){const v=R2.f(...pq);if(Number.isInteger(v)&amp;&amp;v&gt;=1&amp;&amp;v&lt;=99)d.push(String(v));}}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>d.push(String(ans+1),String(ans-1));</p>
+<p class="p1"><span class="Apple-converted-space">    </span>return finalize(rng,q,String(ans),shuf(rng,d.filter(x=&gt;Number(x)&gt;=0)));</p>
+<p class="p1"><span class="Apple-converted-space">  </span>}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>throw new Error("relatedNumbers generation failed");</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">const GENERATORS={letterSeq:genLetterSeq,numberSeq:genNumberSeq,wordCode:genWordCode,letterSum:genLetterSum,relatedNumbers:genRelatedNumbers};</p>
+<p class="p2"><br></p>
+<p class="p2"><br></p>
+<p class="p2"><br></p>
+<p class="p1">/* ================= TYPES ================= */</p>
+<p class="p1">const TYPE_META = {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>letterSeq:<span class="Apple-converted-space">      </span>{ label: "Letter sequences", <span class="Apple-converted-space">    </span>group: "Letters &amp; codes" },</p>
+<p class="p1"><span class="Apple-converted-space">  </span>wordCode: <span class="Apple-converted-space">      </span>{ label: "Word codes", <span class="Apple-converted-space">          </span>group: "Letters &amp; codes" },</p>
+<p class="p1"><span class="Apple-converted-space">  </span>letterSum:<span class="Apple-converted-space">      </span>{ label: "Letter sums",<span class="Apple-converted-space">          </span>group: "Letters &amp; codes" },</p>
+<p class="p1"><span class="Apple-converted-space">  </span>moveLetter: <span class="Apple-converted-space">    </span>{ label: "Move a letter",<span class="Apple-converted-space">        </span>group: "Letters &amp; codes" },</p>
+<p class="p1"><span class="Apple-converted-space">  </span>insertLetter: <span class="Apple-converted-space">  </span>{ label: "Insert a letter",<span class="Apple-converted-space">      </span>group: "Letters &amp; codes" },</p>
+<p class="p1"><span class="Apple-converted-space">  </span>synonym:<span class="Apple-converted-space">        </span>{ label: "Closest meaning",<span class="Apple-converted-space">      </span>group: "Words &amp; meanings" },</p>
+<p class="p1"><span class="Apple-converted-space">  </span>antonym:<span class="Apple-converted-space">        </span>{ label: "Opposites",<span class="Apple-converted-space">            </span>group: "Words &amp; meanings" },</p>
+<p class="p1"><span class="Apple-converted-space">  </span>oddOneOut:<span class="Apple-converted-space">      </span>{ label: "Odd one out",<span class="Apple-converted-space">          </span>group: "Words &amp; meanings" },</p>
+<p class="p1"><span class="Apple-converted-space">  </span>analogy:<span class="Apple-converted-space">        </span>{ label: "Word pairs", <span class="Apple-converted-space">          </span>group: "Words &amp; meanings" },</p>
+<p class="p1"><span class="Apple-converted-space">  </span>compound: <span class="Apple-converted-space">      </span>{ label: "Compound words", <span class="Apple-converted-space">      </span>group: "Words &amp; meanings" },</p>
+<p class="p1"><span class="Apple-converted-space">  </span>doubleMeaning:<span class="Apple-converted-space">  </span>{ label: "Double meanings",<span class="Apple-converted-space">      </span>group: "Words &amp; meanings" },</p>
+<p class="p1"><span class="Apple-converted-space">  </span>hiddenWord: <span class="Apple-converted-space">    </span>{ label: "Hidden words", <span class="Apple-converted-space">        </span>group: "Words &amp; meanings" },</p>
+<p class="p1"><span class="Apple-converted-space">  </span>missingThree: <span class="Apple-converted-space">  </span>{ label: "Missing three letters",group: "Words &amp; meanings" },</p>
+<p class="p1"><span class="Apple-converted-space">  </span>numberSeq:<span class="Apple-converted-space">      </span>{ label: "Number sequences", <span class="Apple-converted-space">    </span>group: "Numbers" },</p>
+<p class="p1"><span class="Apple-converted-space">  </span>relatedNumbers: { label: "Related numbers",<span class="Apple-converted-space">      </span>group: "Numbers" },</p>
+<p class="p1">};</p>
+<p class="p1">const ALL_TYPES = Object.keys(TYPE_META);</p>
+<p class="p1">const PROCEDURAL = Object.keys(GENERATORS);</p>
+<p class="p2"><br></p>
+<p class="p1">/* ================= CURATED → QUESTION ================= */</p>
+<p class="p1">function formatCurated(t, item, rng) {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const base = { typeId: t, level: item.level, curatedId: item.id, explain: item.explain, answer: item.answer, options: shuf(rng, item.options) };</p>
+<p class="p1"><span class="Apple-converted-space">  </span>switch (t) {</p>
+<p class="p1"><span class="Apple-converted-space">    </span>case "synonym":<span class="Apple-converted-space">      </span>return { ...base, prompt: "Which word is closest in meaning to the word in capitals?", big: item.target };</p>
+<p class="p1"><span class="Apple-converted-space">    </span>case "antonym":<span class="Apple-converted-space">      </span>return { ...base, prompt: "Which word is most opposite in meaning to the word in capitals?", big: item.target };</p>
+<p class="p1"><span class="Apple-converted-space">    </span>case "oddOneOut":<span class="Apple-converted-space">    </span>return { ...base, prompt: "Four of these words go together. Which one does not belong?" };</p>
+<p class="p1"><span class="Apple-converted-space">    </span>case "analogy":<span class="Apple-converted-space">      </span>return { ...base, prompt: "Complete the sentence in the most sensible way.", line: item.a + " is to " + item.b + "<span class="Apple-converted-space">  </span>as<span class="Apple-converted-space">  </span>" + item.c + " is to …" };</p>
+<p class="p1"><span class="Apple-converted-space">    </span>case "compound": <span class="Apple-converted-space">    </span>return { ...base, prompt: "Which word joins on to the word in capitals to make one new, real word?", big: item.stem + " + ___" };</p>
+<p class="p1"><span class="Apple-converted-space">    </span>case "hiddenWord": <span class="Apple-converted-space">  </span>return { ...base, prompt: "A four-letter word is hidden at the end of one word and the start of the next. Which is it?", line: "“" + item.sentence + "”" };</p>
+<p class="p1"><span class="Apple-converted-space">    </span>case "moveLetter": <span class="Apple-converted-space">  </span>return { ...base, prompt: "Move one letter from the first word into the second word, so that both make new words. Which letter moves?", mono: item.from + " <span class="Apple-converted-space">  </span>→ <span class="Apple-converted-space">  </span>" + item.to };</p>
+<p class="p1"><span class="Apple-converted-space">    </span>case "insertLetter": return { ...base, prompt: "The same letter finishes the first word and starts the second word — in both pairs. Which letter is it?", mono: item.pairs.map(p =&gt; p[0] + " _ " + p[1]).join("<span class="Apple-converted-space">      </span>") };</p>
+<p class="p1"><span class="Apple-converted-space">    </span>case "missingThree": return { ...base, prompt: "Three letters in a row have been removed from the word in capitals. The missing letters spell a real three-letter word. Which?", line: "“" + item.sentence + "”" };</p>
+<p class="p1"><span class="Apple-converted-space">    </span>case "doubleMeaning":return { ...base, prompt: "Which word goes equally well with both pairs of words?", line: "(" + item.pairA.join(", ") + ")<span class="Apple-converted-space">      </span>(" + item.pairB.join(", ") + ")" };</p>
+<p class="p1"><span class="Apple-converted-space">    </span>default: <span class="Apple-converted-space">            </span>return base;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>}</p>
+<p class="p1">}</p>
+<p class="p1">function pickCurated(t, level, rng, st) {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const bank = BANKS[t];</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const rec = st.recent[t] || [];</p>
+<p class="p1"><span class="Apple-converted-space">  </span>let pool = bank.filter(i =&gt; i.level === level);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>if (!pool.length) pool = bank.filter(i =&gt; Math.abs(i.level - level) === 1);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>if (!pool.length) pool = bank;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>let fresh = pool.filter(i =&gt; !rec.includes(i.id));</p>
+<p class="p1"><span class="Apple-converted-space">  </span>if (!fresh.length) fresh = pool;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const item = pk(rng, fresh);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>st.recent[t] = [item.id, ...rec].slice(0, 10);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>return formatCurated(t, item, rng);</p>
+<p class="p1">}</p>
+<p class="p1">function makeQuestion(t, level, rng, st) {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>if (GENERATORS[t]) { const q = GENERATORS[t](level, rng); q.typeId = t; q.level = level; return q; }</p>
+<p class="p1"><span class="Apple-converted-space">  </span>return pickCurated(t, level, rng, st);</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">/* ================= STATE ================= */</p>
+<p class="p1">const KEY = "smma-vr-state-v1";</p>
+<p class="p1">function freshTypeStat() { return { level: 1, win: [], answered: 0, correct: 0 }; }</p>
+<p class="p1">function defaultState() {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const types = {}; const recent = {};</p>
+<p class="p1"><span class="Apple-converted-space">  </span>for (const t of ALL_TYPES) { types[t] = freshTypeStat(); recent[t] = []; }</p>
+<p class="p1"><span class="Apple-converted-space">  </span>return { v: 1, totals: { answered: 0, correct: 0, drills: 0, mocks: 0 }, streak: { current: 0, best: 0, last: null }, types, recent, mocks: [] };</p>
+<p class="p1">}</p>
+<p class="p1">function mergeState(loaded) {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const d = defaultState();</p>
+<p class="p1"><span class="Apple-converted-space">  </span>if (!loaded || typeof loaded !== "object") return d;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const s = { ...d, ...loaded, totals: { ...d.totals, ...(loaded.totals || {}) }, streak: { ...d.streak, ...(loaded.streak || {}) }, types: { ...d.types }, recent: { ...d.recent }, mocks: Array.isArray(loaded.mocks) ? loaded.mocks : [] };</p>
+<p class="p1"><span class="Apple-converted-space">  </span>for (const t of ALL_TYPES) { if (loaded.types &amp;&amp; loaded.types[t]) s.types[t] = { ...freshTypeStat(), ...loaded.types[t] }; if (loaded.recent &amp;&amp; loaded.recent[t]) s.recent[t] = loaded.recent[t]; }</p>
+<p class="p1"><span class="Apple-converted-space">  </span>return s;</p>
+<p class="p1">}</p>
+<p class="p1">async function loadState() {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>try { const r = await window.storage.get(KEY); if (r &amp;&amp; r.value) return { st: mergeState(JSON.parse(r.value)), ok: true }; } catch (e) {}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>try { await window.storage.set(KEY, JSON.stringify(defaultState())); return { st: defaultState(), ok: true }; } catch (e) {}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>return { st: defaultState(), ok: false };</p>
+<p class="p1">}</p>
+<p class="p1">function saveState(st) { try { window.storage.set(KEY, JSON.stringify(st)); } catch (e) {} }</p>
+<p class="p2"><br></p>
+<p class="p1">/* ================= ADAPTIVE + SESSION BUILDING ================= */</p>
+<p class="p1">function recordAnswer(st, t, ok) {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>st.totals.answered += 1; if (ok) st.totals.correct += 1;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const s = st.types[t];</p>
+<p class="p1"><span class="Apple-converted-space">  </span>s.answered += 1; if (ok) s.correct += 1;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>s.win = [...s.win, ok ? 1 : 0].slice(-8);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>if (s.win.length === 8) {</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const sum = s.win.reduce((a, b) =&gt; a + b, 0);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>if (sum &gt;= 7 &amp;&amp; s.level &lt; 3) { s.level += 1; s.win = []; }</p>
+<p class="p1"><span class="Apple-converted-space">    </span>else if (sum &lt;= 3 &amp;&amp; s.level &gt; 1) { s.level -= 1; s.win = []; }</p>
+<p class="p1"><span class="Apple-converted-space">  </span>}</p>
+<p class="p1">}</p>
+<p class="p1">function typeAccuracy(st, t) { const s = st.types[t]; return (s.correct + 3) / (s.answered + 5); }</p>
+<p class="p1">function pickWeighted(rng, entries) {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const tot = entries.reduce((a, e) =&gt; a + e[1], 0); let r = rng() * tot;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>for (const [t, w] of entries) { r -= w; if (r &lt;= 0) return t; }</p>
+<p class="p1"><span class="Apple-converted-space">  </span>return entries[entries.length - 1][0];</p>
+<p class="p1">}</p>
+<p class="p1">function buildDrill(st, rng) {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const counts = {}; const qs = [];</p>
+<p class="p1"><span class="Apple-converted-space">  </span>while (qs.length &lt; 12) {</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const entries = ALL_TYPES.filter(t =&gt; (counts[t] || 0) &lt; 2).map(t =&gt; [t, Math.max(0.05, 1.06 - typeAccuracy(st, t))]);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const t = pickWeighted(rng, entries);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>counts[t] = (counts[t] || 0) + 1;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>qs.push(makeQuestion(t, st.types[t].level, rng, st));</p>
+<p class="p1"><span class="Apple-converted-space">  </span>}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>return shuf(rng, qs);</p>
+<p class="p1">}</p>
+<p class="p1">function buildFocus(st, rng, t) {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const qs = []; for (let i = 0; i &lt; 8; i++) qs.push(makeQuestion(t, st.types[t].level, rng, st));</p>
+<p class="p1"><span class="Apple-converted-space">  </span>return qs;</p>
+<p class="p1">}</p>
+<p class="p1">function buildMock(st, rng, kind) {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const list = kind === "full" ? ALL_TYPES.flatMap(t =&gt; [t, t, t, t]) : [...ALL_TYPES, ...PROCEDURAL];</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const qs = list.map(t =&gt; makeQuestion(t, rng() &lt; 0.7 ? 3 : 2, rng, st));</p>
+<p class="p1"><span class="Apple-converted-space">  </span>return shuf(rng, qs);</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">/* ================= SMALL HELPERS ================= */</p>
+<p class="p1">function todayStr() { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }</p>
+<p class="p1">function yesterdayStr() { const d = new Date(); d.setDate(d.getDate() - 1); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }</p>
+<p class="p1">function fmtDate(iso) { const d = new Date(iso); return String(d.getDate()).padStart(2, "0") + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + d.getFullYear(); }</p>
+<p class="p1">function fmtClock(s) { const m = Math.floor(s / 60); const ss = String(Math.max(0, s % 60)).padStart(2, "0"); return m + ":" + ss; }</p>
+<p class="p2"><br></p>
+<p class="p1">/* ================= STYLE ================= */</p>
+<p class="p1">const STYLE = `</p>
+<p class="p1">@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&amp;display=swap');</p>
+<p class="p1">:root{</p>
+<p class="p1"><span class="Apple-converted-space">  </span>--paper:#F4F7FA; --ink:#16324A; --cobalt:#2B5CD9; --pencil:#E9A93C;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>--leaf:#1F9D6B; --berry:#D2493C; --line:#D8E2EC; --card:#FFFFFF; --muted:#5B7187;</p>
+<p class="p1">}</p>
+<p class="p1">.vr-root{background:var(--paper);color:var(--ink);min-height:100vh;font-family:ui-rounded,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}</p>
+<p class="p1">.vr-display{font-family:'Space Grotesk',ui-rounded,-apple-system,sans-serif;font-weight:700;letter-spacing:-0.01em;}</p>
+<p class="p1">.vr-mono{font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;}</p>
+<p class="p1">.vr-card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 1px 2px rgba(22,50,74,0.05);}</p>
+<p class="p1">.vr-strip{display:flex;flex-wrap:wrap;gap:2px;justify-content:center;}</p>
+<p class="p1">.vr-strip span{font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:12px;font-weight:600;color:var(--muted);background:var(--card);border:1px solid var(--line);border-radius:5px;width:21px;height:24px;display:flex;align-items:center;justify-content:center;}</p>
+<p class="p1">.vr-opt{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--card);border:2px solid var(--line);border-radius:14px;padding:14px 16px;font-size:17px;font-weight:600;color:var(--ink);cursor:pointer;transition:border-color .12s,transform .08s,background .12s;}</p>
+<p class="p1">.vr-opt:hover:not(:disabled){border-color:var(--cobalt);}</p>
+<p class="p1">.vr-opt:active:not(:disabled){transform:scale(0.985);}</p>
+<p class="p1">.vr-opt:disabled{cursor:default;}</p>
+<p class="p1">.vr-opt.picked-neutral{border-color:var(--cobalt);background:#EEF3FD;}</p>
+<p class="p1">.vr-opt.picked-right{border-color:var(--leaf);background:#EAF7F1;}</p>
+<p class="p1">.vr-opt.picked-wrong{border-color:var(--berry);background:#FBEEEC;}</p>
+<p class="p1">.vr-opt.reveal{border-color:var(--leaf);}</p>
+<p class="p1">.vr-feedback{animation:vrSlide .22s ease-out;border-radius:14px;padding:14px 16px;}</p>
+<p class="p1">@keyframes vrSlide{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}</p>
+<p class="p1">.vr-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:14px;font-weight:700;cursor:pointer;border:none;transition:transform .08s,opacity .12s;}</p>
+<p class="p1">.vr-btn:active{transform:scale(0.98);}</p>
+<p class="p1">.vr-btn-primary{background:var(--cobalt);color:#fff;padding:14px 22px;font-size:17px;}</p>
+<p class="p1">.vr-btn-ghost{background:transparent;color:var(--cobalt);padding:10px 14px;font-size:15px;}</p>
+<p class="p1">.vr-btn:focus-visible,.vr-opt:focus-visible,button:focus-visible{outline:3px solid var(--cobalt);outline-offset:2px;}</p>
+<p class="p1">.vr-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:600;color:var(--muted);}</p>
+<p class="p1">.vr-bar{height:8px;border-radius:99px;background:var(--line);overflow:hidden;}</p>
+<p class="p1">.vr-bar&gt;div{height:100%;border-radius:99px;background:var(--cobalt);}</p>
+<p class="p1">@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important;}}</p>
+<p class="p1">`;</p>
+<p class="p2"><br></p>
+<p class="p1">/* ================= SHARED COMPONENTS ================= */</p>
+<p class="p1">function AlphabetStrip() {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>return (</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div className="vr-strip my-3" role="img" aria-label="Alphabet from A to Z"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>{"ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").map(c =&gt; &lt;span key={c}&gt;{c}&lt;/span&gt;)}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>);</p>
+<p class="p1">}</p>
+<p class="p1">function LevelDots({ n }) {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>return &lt;span className="vr-mono" style={{ color: "var(--pencil)", fontSize: 13, letterSpacing: 2 }}&gt;{"●".repeat(n)}{"○".repeat(3 - n)}&lt;/span&gt;;</p>
+<p class="p1">}</p>
+<p class="p1">function TopBar({ left, centre, right }) {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>return (</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div className="flex items-center justify-between gap-2 py-3"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div className="flex items-center gap-2 min-w-0"&gt;{left}&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div className="flex-1 text-center"&gt;{centre}&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div className="flex items-center gap-2 justify-end"&gt;{right}&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>);</p>
+<p class="p1">}</p>
+<p class="p1">function ExitButton({ onExit }) {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [arm, setArm] = useState(false);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>useEffect(() =&gt; { if (!arm) return; const id = setTimeout(() =&gt; setArm(false), 2500); return () =&gt; clearTimeout(id); }, [arm]);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>return arm ? (</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;button className="vr-btn vr-btn-ghost" style={{ color: "var(--berry)" }} onClick={onExit}&gt;Exit — sure?&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>) : (</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;button className="vr-btn vr-btn-ghost" onClick={() =&gt; setArm(true)} aria-label="Exit session"&gt;&lt;ChevronLeft size={18} /&gt;Exit&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>);</p>
+<p class="p1">}</p>
+<p class="p1">function QuestionCard({ q, picked, onPick, locked, showFeedback }) {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>return (</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div className="vr-card p-5"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div style={{ color: "var(--muted)", fontSize: 13, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}&gt;{TYPE_META[q.typeId].label}&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;p className="mt-2 text-[17px] leading-snug font-semibold"&gt;{q.prompt}&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>{q.big &amp;&amp; &lt;div className="vr-display text-center my-4" style={{ fontSize: 30 }}&gt;{q.big}&lt;/div&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>{q.line &amp;&amp; &lt;div className="text-center my-4" style={{ fontSize: 19, fontWeight: 600 }}&gt;{q.line}&lt;/div&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>{q.mono &amp;&amp; &lt;div className="vr-mono text-center my-4" style={{ fontSize: 21, fontWeight: 700, letterSpacing: "0.04em", overflowWrap: "anywhere" }}&gt;{q.mono}&lt;/div&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>{q.alphabet &amp;&amp; &lt;AlphabetStrip /&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div className="grid gap-2.5 mt-4"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>{q.options.map(opt =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">          </span>let cls = "vr-opt";</p>
+<p class="p1"><span class="Apple-converted-space">          </span>if (!locked &amp;&amp; opt === picked) cls += " picked-neutral";</p>
+<p class="p1"><span class="Apple-converted-space">          </span>if (locked) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>if (opt === picked) cls += opt === q.answer ? " picked-right" : " picked-wrong";</p>
+<p class="p1"><span class="Apple-converted-space">            </span>else if (opt === q.answer &amp;&amp; showFeedback) cls += " reveal";</p>
+<p class="p1"><span class="Apple-converted-space">          </span>}</p>
+<p class="p1"><span class="Apple-converted-space">          </span>return (</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;button key={opt} className={cls} disabled={locked} onClick={() =&gt; onPick(opt)}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>{locked &amp;&amp; opt === q.answer &amp;&amp; &lt;Check size={20} style={{ color: "var(--leaf)", flexShrink: 0 }} /&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">              </span>{locked &amp;&amp; opt === picked &amp;&amp; opt !== q.answer &amp;&amp; &lt;X size={20} style={{ color: "var(--berry)", flexShrink: 0 }} /&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;span style={{ overflowWrap: "anywhere" }}&gt;{opt}&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>})}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>{locked &amp;&amp; showFeedback &amp;&amp; (</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div className="vr-feedback mt-4" style={{ background: picked === q.answer ? "#EAF7F1" : "#FBEEEC", border: "1px solid " + (picked === q.answer ? "var(--leaf)" : "var(--berry)") }}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div className="font-bold" style={{ color: picked === q.answer ? "var(--leaf)" : "var(--berry)" }}&gt;{picked === q.answer ? "Correct" : "Not quite — the answer is " + q.answer}&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div className="mt-1 text-[15px]" style={{ color: "var(--ink)" }}&gt;{q.explain}&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>)}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>);</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p2"><br></p>
+<p class="p1">/* ================= PRACTICE FLOW (drill + focus) ================= */</p>
+<p class="p1">function PracticeFlow({ st, commit, kind, focusType, onDone, onExit }) {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [qs, setQs] = useState(null);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [idx, setIdx] = useState(0);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [picked, setPicked] = useState(null);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [score, setScore] = useState(0);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>useEffect(() =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const next = structuredClone(st);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const rng = makeRng();</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const built = kind === "drill" ? buildDrill(next, rng) : buildFocus(next, rng, focusType);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>commit(next);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>setQs(built);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>}, []);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>if (!qs) return null;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const q = qs[idx];</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const locked = picked !== null;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>function handlePick(opt) {</p>
+<p class="p1"><span class="Apple-converted-space">    </span>if (locked) return;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>setPicked(opt);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const ok = opt === q.answer;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>if (ok) setScore(s =&gt; s + 1);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const next = structuredClone(st);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>recordAnswer(next, q.typeId, ok);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>commit(next);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>function handleNext() {</p>
+<p class="p1"><span class="Apple-converted-space">    </span>if (idx + 1 &lt; qs.length) { setIdx(idx + 1); setPicked(null); return; }</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const next = structuredClone(st);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>if (kind === "drill") {</p>
+<p class="p1"><span class="Apple-converted-space">      </span>next.totals.drills += 1;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const today = todayStr();</p>
+<p class="p1"><span class="Apple-converted-space">      </span>if (next.streak.last !== today) {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>next.streak.current = next.streak.last === yesterdayStr() ? next.streak.current + 1 : 1;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>next.streak.best = Math.max(next.streak.best, next.streak.current);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>next.streak.last = today;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>commit(next);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>onDone({ score, total: qs.length });</p>
+<p class="p1"><span class="Apple-converted-space">  </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>return (</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;TopBar</p>
+<p class="p1"><span class="Apple-converted-space">        </span>left={&lt;ExitButton onExit={onExit} /&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>centre={&lt;span className="font-bold text-[15px]" style={{ color: "var(--muted)" }}&gt;{idx + 1} of {qs.length}&lt;/span&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>right={&lt;span className="vr-chip"&gt;{score} right&lt;/span&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>/&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div className="vr-bar mb-4"&gt;&lt;div style={{ width: ((idx + (locked ? 1 : 0)) / qs.length * 100) + "%" }} /&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;QuestionCard q={q} picked={picked} onPick={handlePick} locked={locked} showFeedback={true} /&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>{locked &amp;&amp; (</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div className="flex justify-end mt-4"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;button className="vr-btn vr-btn-primary" onClick={handleNext}&gt;{idx + 1 &lt; qs.length ? "Next" : "Finish"}&lt;ArrowRight size={18} /&gt;&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>)}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>);</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">function SessionDone({ result, kind, streak, onHome, onAgain }) {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const pct = Math.round(result.score / result.total * 100);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const line = pct &gt;= 80 ? "Sharp work." : pct &gt;= 55 ? "Solid. The explanations are where the marks come from." : "Tough set. Read the explanations back — tomorrow's questions will meet you where you are.";</p>
+<p class="p1"><span class="Apple-converted-space">  </span>return (</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div className="vr-card p-6 text-center mt-6"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div className="vr-display" style={{ fontSize: 44 }}&gt;{result.score} / {result.total}&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;p className="mt-2 font-semibold"&gt;{line}&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>{kind === "drill" &amp;&amp; streak &gt; 0 &amp;&amp; (</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div className="vr-chip mt-4" style={{ color: "var(--pencil)" }}&gt;&lt;Flame size={15} /&gt;{streak} day streak&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>)}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div className="flex gap-3 justify-center mt-6"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;button className="vr-btn vr-btn-ghost" onClick={onHome}&gt;Home&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;button className="vr-btn vr-btn-primary" onClick={onAgain}&gt;Go again&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>);</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">/* ================= FOCUS PICKER ================= */</p>
+<p class="p1">function FocusPicker({ st, onPick, onBack }) {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const groups = {};</p>
+<p class="p1"><span class="Apple-converted-space">  </span>for (const t of ALL_TYPES) { const g = TYPE_META[t].group; (groups[g] = groups[g] || []).push(t); }</p>
+<p class="p1"><span class="Apple-converted-space">  </span>return (</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;TopBar left={&lt;button className="vr-btn vr-btn-ghost" onClick={onBack}&gt;&lt;ChevronLeft size={18} /&gt;Back&lt;/button&gt;} centre={&lt;span className="vr-display text-[17px]"&gt;Practise a type&lt;/span&gt;} right={&lt;span /&gt;} /&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>{Object.entries(groups).map(([g, ts]) =&gt; (</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div key={g} className="mt-4"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div className="font-bold text-[13px] uppercase tracking-wider mb-2" style={{ color: "var(--muted)" }}&gt;{g}&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div className="grid gap-2"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>{ts.map(t =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">              </span>const s = st.types[t];</p>
+<p class="p1"><span class="Apple-converted-space">              </span>const acc = s.answered ? Math.round(s.correct / s.answered * 100) + "%" : "new";</p>
+<p class="p1"><span class="Apple-converted-space">              </span>return (</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;button key={t} className="vr-opt" style={{ fontSize: 16 }} onClick={() =&gt; onPick(t)}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>&lt;span className="flex-1"&gt;{TYPE_META[t].label}&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>&lt;span className="vr-mono text-[13px]" style={{ color: "var(--muted)" }}&gt;{acc}&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>&lt;LevelDots n={s.level} /&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>})}</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>))}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>);</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">/* ================= MOCK ================= */</p>
+<p class="p1">function MockSetup({ onStart, onBack }) {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>return (</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;TopBar left={&lt;button className="vr-btn vr-btn-ghost" onClick={onBack}&gt;&lt;ChevronLeft size={18} /&gt;Back&lt;/button&gt;} centre={&lt;span className="vr-display text-[17px]"&gt;Mock test&lt;/span&gt;} right={&lt;span /&gt;} /&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;p className="mt-2 text-[15px]" style={{ color: "var(--muted)" }}&gt;Exam rules: no hints, no explanations until the end, and the clock decides when you stop. Questions are pitched at real test level.&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div className="grid gap-3 mt-5"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;button className="vr-card p-5 text-left" style={{ cursor: "pointer" }} onClick={() =&gt; onStart("mini")}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div className="vr-display text-[19px]"&gt;Mini mock&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div className="text-[15px] mt-1" style={{ color: "var(--muted)" }}&gt;20 questions · 15 minutes — a sprint&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;button className="vr-card p-5 text-left" style={{ cursor: "pointer" }} onClick={() =&gt; onStart("full")}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div className="vr-display text-[19px]"&gt;Full mock&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div className="text-[15px] mt-1" style={{ color: "var(--muted)" }}&gt;60 questions · 50 minutes — the real shape of the test&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>);</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">function MockFlow({ st, commit, kind, onFinish, onExit }) {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [qs, setQs] = useState(null);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const totalSecs = kind === "full" ? 50 * 60 : 15 * 60;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const deadlineRef = useRef(null);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [remaining, setRemaining] = useState(totalSecs);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [idx, setIdx] = useState(0);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [answers, setAnswers] = useState({});</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const answersRef = useRef({});</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const qsRef = useRef(null);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const submittedRef = useRef(false);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>useEffect(() =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const next = structuredClone(st);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const built = buildMock(next, makeRng(), kind);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>commit(next);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>qsRef.current = built;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>setQs(built);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>deadlineRef.current = Date.now() + totalSecs * 1000;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>}, []);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>function submit() {</p>
+<p class="p1"><span class="Apple-converted-space">    </span>if (submittedRef.current || !qsRef.current) return;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>submittedRef.current = true;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const finalAnswers = answersRef.current;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>let score = 0; const perType = {};</p>
+<p class="p1"><span class="Apple-converted-space">    </span>qsRef.current.forEach((q, i) =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const ok = finalAnswers[i] === q.answer;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>if (ok) score += 1;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const p = perType[q.typeId] = perType[q.typeId] || { right: 0, total: 0 };</p>
+<p class="p1"><span class="Apple-converted-space">      </span>p.total += 1; if (ok) p.right += 1;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>});</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const record = { date: new Date().toISOString(), kind, score, total: qsRef.current.length, perType };</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const next = structuredClone(st);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>next.totals.mocks += 1;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>next.mocks = [record, ...next.mocks].slice(0, 20);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>commit(next);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>onFinish({ record, qs: qsRef.current, answers: finalAnswers });</p>
+<p class="p1"><span class="Apple-converted-space">  </span>}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>useEffect(() =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">    </span>if (!qs) return;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const id = setInterval(() =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const r = Math.round((deadlineRef.current - Date.now()) / 1000);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>setRemaining(r);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>if (r &lt;= 0) { clearInterval(id); submit(); }</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}, 500);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>return () =&gt; clearInterval(id);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>}, [qs]);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>if (!qs) return null;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const q = qs[idx];</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const answeredCount = Object.keys(answers).length;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const low = remaining &lt;= totalSecs * 0.2;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>return (</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;TopBar</p>
+<p class="p1"><span class="Apple-converted-space">        </span>left={&lt;ExitButton onExit={onExit} /&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>centre={&lt;span className="vr-mono font-bold text-[17px]" style={{ color: low ? "var(--berry)" : "var(--ink)" }}&gt;{fmtClock(remaining)}&lt;/span&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>right={&lt;button className="vr-btn vr-btn-ghost" onClick={submit}&gt;Hand in&lt;/button&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>/&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div className="flex flex-wrap gap-1.5 mb-4" aria-label="Question navigator"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>{qs.map((_, i) =&gt; (</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;button key={i} onClick={() =&gt; setIdx(i)} aria-label={"Question " + (i + 1)}</p>
+<p class="p1"><span class="Apple-converted-space">            </span>className="vr-mono"</p>
+<p class="p1"><span class="Apple-converted-space">            </span>style={{ width: 26, height: 26, fontSize: 11, fontWeight: 700, borderRadius: 7, cursor: "pointer",</p>
+<p class="p1"><span class="Apple-converted-space">              </span>border: i === idx ? "2px solid var(--cobalt)" : "1px solid var(--line)",</p>
+<p class="p1"><span class="Apple-converted-space">              </span>background: answers[i] !== undefined ? "var(--cobalt)" : "var(--card)",</p>
+<p class="p1"><span class="Apple-converted-space">              </span>color: answers[i] !== undefined ? "#fff" : "var(--muted)" }}&gt;{i + 1}&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>))}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;QuestionCard q={q} picked={answers[idx] ?? null} onPick={opt =&gt; setAnswers(a =&gt; { const n = { ...a, [idx]: opt }; answersRef.current = n; return n; })} locked={false} showFeedback={false} /&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div className="flex justify-between items-center mt-4"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;button className="vr-btn vr-btn-ghost" disabled={idx === 0} style={{ opacity: idx === 0 ? 0.4 : 1 }} onClick={() =&gt; setIdx(idx - 1)}&gt;&lt;ChevronLeft size={18} /&gt;Previous&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;span className="text-[13px] font-semibold" style={{ color: "var(--muted)" }}&gt;{answeredCount} of {qs.length} answered&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>{idx + 1 &lt; qs.length</p>
+<p class="p1"><span class="Apple-converted-space">          </span>? &lt;button className="vr-btn vr-btn-primary" onClick={() =&gt; setIdx(idx + 1)}&gt;Next&lt;ArrowRight size={18} /&gt;&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>: &lt;button className="vr-btn vr-btn-primary" onClick={submit}&gt;Hand in&lt;/button&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>);</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">function MockReview({ data, onHome }) {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const { record, qs, answers } = data;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const pct = Math.round(record.score / record.total * 100);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const rows = Object.entries(record.perType).sort((a, b) =&gt; (a[1].right / a[1].total) - (b[1].right / b[1].total));</p>
+<p class="p1"><span class="Apple-converted-space">  </span>return (</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;TopBar left={&lt;span /&gt;} centre={&lt;span className="vr-display text-[17px]"&gt;Mock results&lt;/span&gt;} right={&lt;button className="vr-btn vr-btn-ghost" onClick={onHome}&gt;Done&lt;/button&gt;} /&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div className="vr-card p-6 text-center"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div className="vr-display" style={{ fontSize: 44 }}&gt;{record.score} / {record.total}&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div className="font-semibold mt-1" style={{ color: "var(--muted)" }}&gt;{pct}% · {record.kind === "full" ? "Full" : "Mini"} mock · {fmtDate(record.date)}&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div className="vr-card p-5 mt-4"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div className="font-bold text-[13px] uppercase tracking-wider mb-3" style={{ color: "var(--muted)" }}&gt;By question type — weakest first&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div className="grid gap-2"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{rows.map(([t, p]) =&gt; (</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div key={t} className="flex items-center gap-3"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;span className="flex-1 text-[15px] font-semibold"&gt;{TYPE_META[t].label}&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;div className="vr-bar" style={{ width: 90 }}&gt;&lt;div style={{ width: (p.right / p.total * 100) + "%", background: p.right / p.total &gt;= 0.6 ? "var(--leaf)" : "var(--berry)" }} /&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;span className="vr-mono text-[13px]" style={{ color: "var(--muted)", width: 38, textAlign: "right" }}&gt;{p.right}/{p.total}&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>))}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div className="mt-4 grid gap-3"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>{qs.map((q, i) =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const user = answers[i]; const ok = user === q.answer;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>return (</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div key={i} className="vr-card p-4" style={{ borderLeft: "4px solid " + (ok ? "var(--leaf)" : "var(--berry)") }}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;div className="text-[12px] font-bold uppercase tracking-wider" style={{ color: "var(--muted)" }}&gt;{i + 1} · {TYPE_META[q.typeId].label}&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;div className="text-[15px] font-semibold mt-1"&gt;{q.prompt}&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>{q.big &amp;&amp; &lt;div className="vr-display mt-1" style={{ fontSize: 20 }}&gt;{q.big}&lt;/div&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">              </span>{q.line &amp;&amp; &lt;div className="mt-1 text-[15px]"&gt;{q.line}&lt;/div&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">              </span>{q.mono &amp;&amp; &lt;div className="vr-mono mt-1 text-[15px] font-bold"&gt;{q.mono}&lt;/div&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;div className="mt-2 text-[15px]"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>{ok ? &lt;span style={{ color: "var(--leaf)", fontWeight: 700 }}&gt;Right: {q.answer}&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>: &lt;span&gt;&lt;span style={{ color: "var(--berry)", fontWeight: 700 }}&gt;{user === undefined ? "Not answered" : "You put " + user}&lt;/span&gt;&lt;span style={{ fontWeight: 700 }}&gt; · Answer: {q.answer}&lt;/span&gt;&lt;/span&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;div className="mt-1 text-[14px]" style={{ color: "var(--muted)" }}&gt;{q.explain}&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>})}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div className="flex justify-center mt-6"&gt;&lt;button className="vr-btn vr-btn-primary" onClick={onHome}&gt;Back to home&lt;/button&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>);</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">/* ================= PROGRESS ================= */</p>
+<p class="p1">function ProgressDash({ st, onBack, memOnly }) {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const groups = {};</p>
+<p class="p1"><span class="Apple-converted-space">  </span>for (const t of ALL_TYPES) { const g = TYPE_META[t].group; (groups[g] = groups[g] || []).push(t); }</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const weakest = ALL_TYPES.filter(t =&gt; st.types[t].answered &gt;= 4)</p>
+<p class="p1"><span class="Apple-converted-space">    </span>.sort((a, b) =&gt; (st.types[a].correct / st.types[a].answered) - (st.types[b].correct / st.types[b].answered)).slice(0, 3);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>return (</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;TopBar left={&lt;button className="vr-btn vr-btn-ghost" onClick={onBack}&gt;&lt;ChevronLeft size={18} /&gt;Back&lt;/button&gt;} centre={&lt;span className="vr-display text-[17px]"&gt;Progress&lt;/span&gt;} right={&lt;span /&gt;} /&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div className="grid grid-cols-3 gap-3 mt-2"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>{[</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ label: "Day streak", value: st.streak.current, sub: "best " + st.streak.best },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ label: "Drills done", value: st.totals.drills, sub: st.totals.answered + " questions" },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ label: "Mocks sat", value: st.totals.mocks, sub: st.mocks[0] ? Math.round(st.mocks[0].score / st.mocks[0].total * 100) + "% last" : "—" },</p>
+<p class="p1"><span class="Apple-converted-space">        </span>].map(c =&gt; (</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div key={c.label} className="vr-card p-4 text-center"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div className="vr-display" style={{ fontSize: 28 }}&gt;{c.value}&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div className="text-[12px] font-bold uppercase tracking-wider mt-1" style={{ color: "var(--muted)" }}&gt;{c.label}&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div className="text-[12px]" style={{ color: "var(--muted)" }}&gt;{c.sub}&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>))}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>{weakest.length &gt; 0 &amp;&amp; (</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div className="mt-4 text-[14px] font-semibold" style={{ color: "var(--muted)" }}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>Worth a focus session: {weakest.map(t =&gt; TYPE_META[t].label).join(" · ")}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>)}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>{Object.entries(groups).map(([g, ts]) =&gt; (</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div key={g} className="vr-card p-5 mt-4"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div className="font-bold text-[13px] uppercase tracking-wider mb-3" style={{ color: "var(--muted)" }}&gt;{g}&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div className="grid gap-2.5"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>{ts.map(t =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">              </span>const s = st.types[t];</p>
+<p class="p1"><span class="Apple-converted-space">              </span>const acc = s.answered ? s.correct / s.answered : null;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>return (</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;div key={t} className="flex items-center gap-3"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>&lt;span className="flex-1 text-[15px] font-semibold"&gt;{TYPE_META[t].label}&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>&lt;LevelDots n={s.level} /&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>&lt;div className="vr-bar" style={{ width: 80 }}&gt;&lt;div style={{ width: (acc === null ? 0 : acc * 100) + "%", background: acc !== null &amp;&amp; acc &lt; 0.5 ? "var(--berry)" : "var(--cobalt)" }} /&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>&lt;span className="vr-mono text-[13px]" style={{ color: "var(--muted)", width: 42, textAlign: "right" }}&gt;{acc === null ? "—" : Math.round(acc * 100) + "%"}&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>})}</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>))}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div className="text-[12px] mt-2" style={{ color: "var(--muted)" }}&gt;Accuracy counts practice questions (drills and focus). Levels adapt as questions are answered. Mock scores are kept separately below.&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>{st.mocks.length &gt; 0 &amp;&amp; (</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div className="vr-card p-5 mt-4"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div className="font-bold text-[13px] uppercase tracking-wider mb-3" style={{ color: "var(--muted)" }}&gt;Mock history&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div className="grid gap-2"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>{st.mocks.map((m, i) =&gt; (</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;div key={i} className="flex items-center gap-3 text-[15px]"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;span className="vr-mono text-[13px]" style={{ color: "var(--muted)" }}&gt;{fmtDate(m.date)}&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;span className="flex-1 font-semibold"&gt;{m.kind === "full" ? "Full" : "Mini"}&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;span className="vr-mono font-bold"&gt;{m.score}/{m.total}&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;span className="vr-mono text-[13px]" style={{ color: "var(--muted)", width: 42, textAlign: "right" }}&gt;{Math.round(m.score / m.total * 100)}%&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>))}</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>)}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>{memOnly &amp;&amp; &lt;div className="mt-4 text-[13px]" style={{ color: "var(--berry)" }}&gt;Saving is not available in this view, so progress will reset when the page closes.&lt;/div&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>);</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">/* ================= ABOUT ================= */</p>
+<p class="p1">function AboutTest({ onBack }) {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>return (</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;TopBar left={&lt;button className="vr-btn vr-btn-ghost" onClick={onBack}&gt;&lt;ChevronLeft size={18} /&gt;Back&lt;/button&gt;} centre={&lt;span className="vr-display text-[17px]"&gt;About the test&lt;/span&gt;} right={&lt;span /&gt;} /&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div className="vr-card p-5 mt-2 grid gap-3 text-[15px] leading-relaxed"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;p&gt;&lt;strong&gt;The test.&lt;/strong&gt; St Mary Magdalene Academy's Year 7 Aptitude Test is a single 50-minute GL Assessment &lt;strong&gt;verbal reasoning&lt;/strong&gt; paper. There are no maths or English papers for this route — this one test is the whole thing.&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;p&gt;&lt;strong&gt;The stakes.&lt;/strong&gt; 18 of the 180 Year 7 places (10%) go to the highest scorers, ranked purely on the test. All other places are allocated on the school's usual criteria, so sitting it is optional — a strong score is one extra route in, and a weak score costs nothing.&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;p&gt;&lt;strong&gt;Timeline for a child in Year 4 now&lt;/strong&gt; (projected from the 2026 cycle — confirm on smmacademy.org each spring): register between May and early July &lt;strong&gt;2027&lt;/strong&gt; (the noon deadline is strictly enforced); sit the test in early October &lt;strong&gt;2027&lt;/strong&gt;, at the start of Year 6; submit the council application by &lt;strong&gt;31-10-2027&lt;/strong&gt;; entry September &lt;strong&gt;2028&lt;/strong&gt;.&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;p&gt;&lt;strong&gt;How to prepare.&lt;/strong&gt; The school refreshes test content each year to reduce predictability, so broad coverage of question types plus wide reading beats question-spotting. Use this app little and often — the daily drill is built for ten minutes a day — and sit the official free GL familiarisation papers at &lt;span className="vr-mono"&gt;11plus.gl-assessment.co.uk/free-materials&lt;/span&gt; nearer the time.&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>);</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">/* ================= HOME ================= */</p>
+<p class="p1">function HomeScreen({ st, go, memOnly }) {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const doneToday = st.streak.last === todayStr();</p>
+<p class="p1"><span class="Apple-converted-space">  </span>return (</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div className="pt-8 pb-2 text-center"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div className="vr-display" style={{ fontSize: 34, lineHeight: 1.05 }}&gt;Code Cracker&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div className="mt-1 font-semibold text-[14px] uppercase tracking-widest" style={{ color: "var(--muted)" }}&gt;Verbal reasoning trainer&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div className="vr-strip mt-4" aria-hidden="true"&gt;{"ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").map(c =&gt; &lt;span key={c}&gt;{c}&lt;/span&gt;)}&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div className="flex justify-center gap-2 mt-4"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{st.streak.current &gt; 0 &amp;&amp; &lt;span className="vr-chip" style={{ color: "var(--pencil)" }}&gt;&lt;Flame size={15} /&gt;{st.streak.current} day streak&lt;/span&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{doneToday &amp;&amp; &lt;span className="vr-chip" style={{ color: "var(--leaf)" }}&gt;&lt;Check size={15} /&gt;Today's drill done&lt;/span&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div className="grid gap-3 mt-4"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;button className="vr-card p-5 text-left flex items-center gap-4" style={{ cursor: "pointer", borderColor: "var(--cobalt)", borderWidth: 2 }} onClick={() =&gt; go("drill")}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;Zap size={26} style={{ color: "var(--cobalt)", flexShrink: 0 }} /&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;span&gt;&lt;span className="vr-display text-[19px] block"&gt;Daily drill&lt;/span&gt;&lt;span className="text-[14px]" style={{ color: "var(--muted)" }}&gt;12 mixed questions with instant explanations — about ten minutes&lt;/span&gt;&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;button className="vr-card p-5 text-left flex items-center gap-4" style={{ cursor: "pointer" }} onClick={() =&gt; go("focusPick")}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;Target size={26} style={{ color: "var(--pencil)", flexShrink: 0 }} /&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;span&gt;&lt;span className="vr-display text-[19px] block"&gt;Practise a type&lt;/span&gt;&lt;span className="text-[14px]" style={{ color: "var(--muted)" }}&gt;Eight questions on one skill — pick your weak spot&lt;/span&gt;&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;button className="vr-card p-5 text-left flex items-center gap-4" style={{ cursor: "pointer" }} onClick={() =&gt; go("mockSetup")}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;Timer size={26} style={{ color: "var(--berry)", flexShrink: 0 }} /&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;span&gt;&lt;span className="vr-display text-[19px] block"&gt;Mock test&lt;/span&gt;&lt;span className="text-[14px]" style={{ color: "var(--muted)" }}&gt;Against the clock, no help — like the real thing&lt;/span&gt;&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div className="flex justify-center gap-2 mt-5"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;button className="vr-btn vr-btn-ghost" onClick={() =&gt; go("progress")}&gt;&lt;BarChart3 size={17} /&gt;Progress&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;button className="vr-btn vr-btn-ghost" onClick={() =&gt; go("about")}&gt;&lt;Info size={17} /&gt;About the test&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>{memOnly &amp;&amp; &lt;div className="text-center text-[13px] mt-3" style={{ color: "var(--berry)" }}&gt;Saving is not available here — progress will reset when the page closes.&lt;/div&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>);</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">/* ================= APP ================= */</p>
+<p class="p1">function App() {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [st, setSt] = useState(null);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [memOnly, setMemOnly] = useState(false);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [screen, setScreen] = useState({ name: "home" });</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [sessionKey, setSessionKey] = useState(0);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>useEffect(() =&gt; { loadState().then(({ st, ok }) =&gt; { setSt(st); setMemOnly(!ok); }); }, []);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>function commit(next) { setSt(next); saveState(next); }</p>
+<p class="p1"><span class="Apple-converted-space">  </span>function go(name, payload) { setSessionKey(k =&gt; k + 1); setScreen({ name, payload }); }</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>if (!st) return (</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div className="vr-root flex items-center justify-center" style={{ minHeight: "100vh" }}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;style&gt;{STYLE}&lt;/style&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div className="vr-display" style={{ fontSize: 22, color: "var(--muted)" }}&gt;Sharpening pencils…&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>const s = screen.name;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>return (</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div className="vr-root"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;style&gt;{STYLE}&lt;/style&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div className="max-w-2xl mx-auto px-4 pb-16"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>{s === "home" &amp;&amp; &lt;HomeScreen st={st} go={go} memOnly={memOnly} /&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>{s === "drill" &amp;&amp; &lt;PracticeFlow key={sessionKey} st={st} commit={commit} kind="drill" onExit={() =&gt; go("home")} onDone={r =&gt; go("done", { r, kind: "drill" })} /&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>{s === "focusPick" &amp;&amp; &lt;FocusPicker st={st} onPick={t =&gt; go("focus", { t })} onBack={() =&gt; go("home")} /&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>{s === "focus" &amp;&amp; &lt;PracticeFlow key={sessionKey} st={st} commit={commit} kind="focus" focusType={screen.payload.t} onExit={() =&gt; go("focusPick")} onDone={r =&gt; go("done", { r, kind: "focus", t: screen.payload.t })} /&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>{s === "done" &amp;&amp; &lt;SessionDone result={screen.payload.r} kind={screen.payload.kind} streak={st.streak.current} onHome={() =&gt; go("home")} onAgain={() =&gt; go(screen.payload.kind === "drill" ? "drill" : "focus", screen.payload.kind === "drill" ? undefined : { t: screen.payload.t })} /&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>{s === "mockSetup" &amp;&amp; &lt;MockSetup onStart={kind =&gt; go("mock", { kind })} onBack={() =&gt; go("home")} /&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>{s === "mock" &amp;&amp; &lt;MockFlow key={sessionKey} st={st} commit={commit} kind={screen.payload.kind} onExit={() =&gt; go("home")} onFinish={data =&gt; go("mockReview", data)} /&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>{s === "mockReview" &amp;&amp; &lt;MockReview data={screen.payload} onHome={() =&gt; go("home")} /&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>{s === "progress" &amp;&amp; &lt;ProgressDash st={st} onBack={() =&gt; go("home")} memOnly={memOnly} /&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>{s === "about" &amp;&amp; &lt;AboutTest onBack={() =&gt; go("home")} /&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>);</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">createRoot(document.getElementById("root")).render(&lt;App /&gt;);</p>
+<p class="p1">&lt;/script&gt;</p>
+<p class="p1">&lt;/body&gt;</p>
+<p class="p1">&lt;/html&gt;</p>
+</body>
+</html>
