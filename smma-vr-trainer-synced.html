@@ -1,0 +1,1016 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Code Cracker">
+<title>Code Cracker — Verbal Reasoning Trainer</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script type="importmap">
+{"imports":{
+  "react":"https://esm.sh/react@18.3.1",
+  "react-dom/client":"https://esm.sh/react-dom@18.3.1/client?deps=react@18.3.1",
+  "lucide-react":"https://esm.sh/lucide-react@0.383.0?deps=react@18.3.1"
+}}
+</script>
+<script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js"></script>
+<style>html,body{margin:0;padding:0;background:#F4F7FA;}</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" data-type="module" data-presets="react">
+
+// ============================================================================
+//  EDIT THESE THREE LINES, THEN SAVE. Nothing else needs changing.
+// ============================================================================
+const SUPABASE_URL      = "https://YOURPROJECT.supabase.co";   // <-- paste your Project URL
+const SUPABASE_ANON_KEY = "PASTE-YOUR-ANON-PUBLIC-KEY-HERE";    // <-- paste your anon public key
+const PROFILE_ID        = "son-7f3a";                          // any fixed string; leave as-is is fine
+// ============================================================================
+
+const REST = SUPABASE_URL + "/rest/v1/progress";
+const HDR = { "apikey": SUPABASE_ANON_KEY, "Authorization": "Bearer " + SUPABASE_ANON_KEY, "Content-Type": "application/json" };
+const TSKEY = "smma-vr-state-v1::ts";
+const CONFIGURED = SUPABASE_URL.indexOf("YOURPROJECT") === -1 && SUPABASE_ANON_KEY.indexOf("PASTE-") === -1;
+
+async function remoteGet(){
+  if(!CONFIGURED) return null;
+  const r = await fetch(REST + "?id=eq." + encodeURIComponent(PROFILE_ID) + "&select=data,updated_at", { headers: HDR });
+  if(!r.ok) throw new Error("remote get " + r.status);
+  const rows = await r.json();
+  if(!rows || !rows.length) return null;
+  return { value: rows[0].data, updatedAt: Date.parse(rows[0].updated_at) || 0 };
+}
+async function remotePut(valueObj){
+  if(!CONFIGURED) return;
+  const body = [{ id: PROFILE_ID, data: valueObj, updated_at: new Date().toISOString() }];
+  await fetch(REST, { method: "POST", headers: { ...HDR, "Prefer": "resolution=merge-duplicates" }, body: JSON.stringify(body) });
+}
+
+// Same async contract the app already expects. localStorage is the source of truth
+// when offline; the cloud row wins on load only when it is strictly newer.
+window.storage = {
+  async get(key){
+    const localRaw = localStorage.getItem(key);
+    const localTs = Number(localStorage.getItem(TSKEY) || 0);
+    let remote = null;
+    try { remote = await remoteGet(); } catch(e){}
+    if(remote && remote.updatedAt >= localTs){
+      const raw = typeof remote.value === "string" ? remote.value : JSON.stringify(remote.value);
+      localStorage.setItem(key, raw);
+      localStorage.setItem(TSKEY, String(remote.updatedAt));
+      return { key, value: raw };
+    }
+    if(localRaw === null) throw new Error("not found");
+    return { key, value: localRaw };
+  },
+  async set(key, value){
+    localStorage.setItem(key, value);
+    localStorage.setItem(TSKEY, String(Date.now()));
+    let parsed; try { parsed = JSON.parse(value); } catch(e){ parsed = value; }
+    remotePut(parsed).catch(function(){});
+    return { key, value };
+  },
+  async delete(key){ localStorage.removeItem(key); try{ if(CONFIGURED) await fetch(REST + "?id=eq." + encodeURIComponent(PROFILE_ID), { method:"DELETE", headers: HDR }); }catch(e){} return { key, deleted: true }; },
+  async list(prefix){ return { keys: Object.keys(localStorage).filter(function(k){ return !prefix || k.startsWith(prefix); }) }; }
+};
+
+import { createRoot } from "react-dom/client";
+import React, { useState, useEffect, useRef } from "react";
+import { Flame, Zap, Target, Timer, BarChart3, Info, Check, X, ArrowRight, ChevronLeft } from "lucide-react";
+
+/* ================= DATA (validated banks injected at build time) ================= */
+const BANKS = {"synonym":[{"id":"sy1","level":1,"target":"BEGIN","options":["start","finish","sleep","carry"],"answer":"start","explain":"To begin something is to start it."},{"id":"sy2","level":1,"target":"LARGE","options":["big","thin","late","loud"],"answer":"big","explain":"Large and big both mean great in size."},{"id":"sy3","level":1,"target":"QUICK","options":["fast","slow","heavy","kind"],"answer":"fast","explain":"Quick and fast both mean moving at speed."},{"id":"sy4","level":1,"target":"SHOUT","options":["yell","whisper","walk","write"],"answer":"yell","explain":"To shout is to yell — to call out loudly."},{"id":"sy5","level":1,"target":"HAPPY","options":["glad","angry","tired","lost"],"answer":"glad","explain":"Happy and glad both describe feeling pleased."},{"id":"sy6","level":2,"target":"PLENTIFUL","options":["abundant","scarce","hollow","gradual"],"answer":"abundant","explain":"Plentiful and abundant both mean existing in large amounts."},{"id":"sy7","level":2,"target":"CAUTIOUS","options":["careful","reckless","cheerful","distant"],"answer":"careful","explain":"A cautious person takes care to avoid danger — they are careful."},{"id":"sy8","level":2,"target":"ANCIENT","options":["old","modern","broken","golden"],"answer":"old","explain":"Ancient means very old."},{"id":"sy9","level":2,"target":"VACANT","options":["empty","crowded","dusty","locked"],"answer":"empty","explain":"Vacant means empty or unoccupied."},{"id":"sy10","level":2,"target":"RAPID","options":["swift","sluggish","narrow","frequent"],"answer":"swift","explain":"Rapid and swift both mean very fast."},{"id":"sy11","level":3,"target":"CANDID","options":["frank","secretive","polite","nervous"],"answer":"frank","explain":"Candid and frank both mean honest and direct."},{"id":"sy12","level":3,"target":"FRUGAL","options":["thrifty","wasteful","wealthy","greedy"],"answer":"thrifty","explain":"Frugal and thrifty both mean careful with money."},{"id":"sy13","level":3,"target":"OBSTINATE","options":["stubborn","flexible","foolish","rude"],"answer":"stubborn","explain":"Obstinate means stubbornly refusing to change your mind."},{"id":"sy14","level":3,"target":"MELANCHOLY","options":["sorrowful","joyful","thoughtful","sleepy"],"answer":"sorrowful","explain":"Melancholy means deeply sad — sorrowful."},{"id":"sy15","level":3,"target":"DILIGENT","options":["hard-working","lazy","talented","strict"],"answer":"hard-working","explain":"A diligent person works carefully and persistently."}],"antonym":[{"id":"an1","level":1,"target":"HOT","options":["cold","warm","wet","soft"],"answer":"cold","explain":"Cold is the opposite of hot. Warm is close to hot, not opposite."},{"id":"an2","level":1,"target":"EARLY","options":["late","soon","fast","first"],"answer":"late","explain":"Late is the opposite of early."},{"id":"an3","level":1,"target":"EMPTY","options":["full","hollow","open","clean"],"answer":"full","explain":"Full is the opposite of empty. Hollow means much the same as empty."},{"id":"an4","level":1,"target":"NOISY","options":["quiet","loud","busy","bright"],"answer":"quiet","explain":"Quiet is the opposite of noisy. Loud means the same as noisy."},{"id":"an5","level":1,"target":"WIN","options":["lose","draw","play","try"],"answer":"lose","explain":"To lose is the opposite of to win."},{"id":"an6","level":2,"target":"EXPAND","options":["shrink","stretch","explode","widen"],"answer":"shrink","explain":"Expand means get bigger; shrink means get smaller."},{"id":"an7","level":2,"target":"ACCEPT","options":["refuse","receive","agree","collect"],"answer":"refuse","explain":"To refuse is to say no — the opposite of accepting."},{"id":"an8","level":2,"target":"SCARCE","options":["plentiful","rare","tiny","distant"],"answer":"plentiful","explain":"Scarce means in short supply; plentiful means there is lots. Rare means the same as scarce."},{"id":"an9","level":2,"target":"GENEROUS","options":["mean","kind","wasteful","polite"],"answer":"mean","explain":"Generous means giving freely; mean means unwilling to give or share."},{"id":"an10","level":2,"target":"VICTORY","options":["defeat","battle","triumph","contest"],"answer":"defeat","explain":"Defeat is the opposite of victory. Triumph means the same as victory."},{"id":"an11","level":3,"target":"TRANSPARENT","options":["opaque","clear","fragile","glossy"],"answer":"opaque","explain":"Transparent means see-through; opaque means light cannot pass through."},{"id":"an12","level":3,"target":"HUMBLE","options":["arrogant","modest","gentle","honest"],"answer":"arrogant","explain":"Humble means modest about yourself; arrogant means thinking too highly of yourself."},{"id":"an13","level":3,"target":"PERMANENT","options":["temporary","lasting","solid","ancient"],"answer":"temporary","explain":"Permanent means lasting forever; temporary means only for a short time."},{"id":"an14","level":3,"target":"ABUNDANT","options":["scarce","plentiful","generous","heavy"],"answer":"scarce","explain":"Abundant means in large amounts; scarce means in short supply."},{"id":"an15","level":3,"target":"CONCEAL","options":["reveal","hide","cover","protect"],"answer":"reveal","explain":"To conceal is to hide; to reveal is to show. Hide means the same as conceal."}],"oddOneOut":[{"id":"od1","level":1,"options":["apple","banana","carrot","cherry","plum"],"answer":"carrot","explain":"A carrot is a vegetable; the others are fruits."},{"id":"od2","level":1,"options":["run","jump","skip","chair","hop"],"answer":"chair","explain":"A chair is an object; the others are ways of moving."},{"id":"od3","level":1,"options":["red","blue","green","seven","yellow"],"answer":"seven","explain":"Seven is a number; the others are colours."},{"id":"od4","level":1,"options":["dog","cat","rabbit","sparrow","hamster"],"answer":"sparrow","explain":"A sparrow is a bird; the others are mammals kept as pets."},{"id":"od5","level":1,"options":["car","bus","lorry","van","kettle"],"answer":"kettle","explain":"A kettle is found in a kitchen; the others are road vehicles."},{"id":"od6","level":2,"options":["oak","ash","beech","rose","willow"],"answer":"rose","explain":"A rose is a flower; the others are trees."},{"id":"od7","level":2,"options":["trout","salmon","eagle","cod","herring"],"answer":"eagle","explain":"An eagle is a bird; the others are fish."},{"id":"od8","level":2,"options":["violin","cello","trumpet","guitar","harp"],"answer":"trumpet","explain":"A trumpet is a brass instrument; the others are string instruments."},{"id":"od9","level":2,"options":["France","Spain","Italy","Europe","Greece"],"answer":"Europe","explain":"Europe is a continent; the others are countries."},{"id":"od10","level":2,"options":["whisper","mutter","murmur","mumble","bellow"],"answer":"bellow","explain":"To bellow is to speak very loudly; the others mean to speak quietly."},{"id":"od11","level":3,"options":["triangle","square","circle","pentagon","hexagon"],"answer":"circle","explain":"A circle has no straight sides; the others are made of straight sides."},{"id":"od12","level":3,"options":["copper","iron","oxygen","zinc","tin"],"answer":"oxygen","explain":"Oxygen is a gas; the others are metals."},{"id":"od13","level":3,"options":["comedy","tragedy","novel","pantomime","opera"],"answer":"novel","explain":"A novel is read; the others are performed on stage."},{"id":"od14","level":3,"options":["kilometre","litre","mile","inch","centimetre"],"answer":"litre","explain":"A litre measures volume; the others measure length."},{"id":"od15","level":3,"options":["drizzle","downpour","shower","breeze","rain"],"answer":"breeze","explain":"A breeze is moving air; the others are kinds of rainfall."}],"analogy":[{"id":"ag1","level":1,"a":"Kitten","b":"cat","c":"puppy","options":["dog","bone","lead","bark"],"answer":"dog","explain":"A kitten is a young cat, and a puppy is a young dog."},{"id":"ag2","level":1,"a":"Bird","b":"fly","c":"fish","options":["swim","scale","river","boat"],"answer":"swim","explain":"A bird moves by flying; a fish moves by swimming."},{"id":"ag3","level":1,"a":"Finger","b":"hand","c":"toe","options":["foot","shoe","leg","nail"],"answer":"foot","explain":"A finger is part of a hand; a toe is part of a foot."},{"id":"ag4","level":1,"a":"Day","b":"sun","c":"night","options":["moon","dark","bed","star"],"answer":"moon","explain":"The sun is seen in the day; the moon is seen at night."},{"id":"ag5","level":1,"a":"Cow","b":"calf","c":"sheep","options":["lamb","wool","goat","farm"],"answer":"lamb","explain":"A calf is a baby cow; a lamb is a baby sheep."},{"id":"ag6","level":2,"a":"Author","b":"book","c":"sculptor","options":["statue","hammer","museum","painting"],"answer":"statue","explain":"An author creates a book; a sculptor creates a statue."},{"id":"ag7","level":2,"a":"Bee","b":"hive","c":"bird","options":["nest","wing","sky","worm"],"answer":"nest","explain":"A bee lives in a hive; a bird lives in a nest."},{"id":"ag8","level":2,"a":"Scales","b":"fish","c":"feathers","options":["bird","pillow","wing","flight"],"answer":"bird","explain":"A fish is covered in scales; a bird is covered in feathers."},{"id":"ag9","level":2,"a":"Pen","b":"write","c":"scissors","options":["cut","paper","sharp","blade"],"answer":"cut","explain":"A pen is used to write; scissors are used to cut."},{"id":"ag10","level":2,"a":"Teacher","b":"school","c":"doctor","options":["hospital","medicine","patient","nurse"],"answer":"hospital","explain":"A teacher works in a school; a doctor works in a hospital."},{"id":"ag11","level":3,"a":"Drought","b":"rain","c":"famine","options":["food","desert","hunger","farm"],"answer":"food","explain":"A drought is a lack of rain; a famine is a lack of food."},{"id":"ag12","level":3,"a":"Optimist","b":"hopeful","c":"pessimist","options":["gloomy","cheerful","clever","quiet"],"answer":"gloomy","explain":"An optimist feels hopeful; a pessimist feels gloomy."},{"id":"ag13","level":3,"a":"Centimetre","b":"length","c":"gram","options":["mass","distance","volume","temperature"],"answer":"mass","explain":"A centimetre measures length; a gram measures mass."},{"id":"ag14","level":3,"a":"Sapling","b":"tree","c":"cygnet","options":["swan","duck","river","feather"],"answer":"swan","explain":"A sapling grows into a tree; a cygnet grows into a swan."},{"id":"ag15","level":3,"a":"Visible","b":"invisible","c":"possible","options":["impossible","probable","unlikely","hidden"],"answer":"impossible","explain":"Adding the prefix turns the word into its opposite: visible/invisible, possible/impossible."}],"compound":[{"id":"cp1","level":1,"stem":"SUN","options":["flower","chair","book","door"],"answer":"flower","explain":"SUN + FLOWER makes SUNFLOWER."},{"id":"cp2","level":1,"stem":"FOOT","options":["ball","cake","lamp","rain"],"answer":"ball","explain":"FOOT + BALL makes FOOTBALL."},{"id":"cp3","level":1,"stem":"RAIN","options":["bow","cup","leaf","road"],"answer":"bow","explain":"RAIN + BOW makes RAINBOW."},{"id":"cp4","level":1,"stem":"TOOTH","options":["brush","plate","glass","spoon"],"answer":"brush","explain":"TOOTH + BRUSH makes TOOTHBRUSH."},{"id":"cp5","level":1,"stem":"BED","options":["room","floor","roof","wall"],"answer":"room","explain":"BED + ROOM makes BEDROOM."},{"id":"cp6","level":2,"stem":"NEWS","options":["paper","screen","book","card"],"answer":"paper","explain":"NEWS + PAPER makes NEWSPAPER."},{"id":"cp7","level":2,"stem":"SNOW","options":["flake","stone","leaf","cloud"],"answer":"flake","explain":"SNOW + FLAKE makes SNOWFLAKE."},{"id":"cp8","level":2,"stem":"HONEY","options":["comb","brush","cup","fork"],"answer":"comb","explain":"HONEY + COMB makes HONEYCOMB."},{"id":"cp9","level":2,"stem":"EAR","options":["ring","band","hook","loop"],"answer":"ring","explain":"EAR + RING makes EARRING."},{"id":"cp10","level":2,"stem":"BOOK","options":["case","page","pen","lid"],"answer":"case","explain":"BOOK + CASE makes BOOKCASE."},{"id":"cp11","level":3,"stem":"SHORT","options":["bread","loaf","bun","roll"],"answer":"bread","explain":"SHORT + BREAD makes SHORTBREAD — the biscuit, not actual bread."},{"id":"cp12","level":3,"stem":"WATER","options":["fall","pour","rain","wave"],"answer":"fall","explain":"WATER + FALL makes WATERFALL."},{"id":"cp13","level":3,"stem":"HAND","options":["some","many","much","lots"],"answer":"some","explain":"HAND + SOME makes HANDSOME — the meaning changes completely."},{"id":"cp14","level":3,"stem":"CUP","options":["board","plate","shelf","table"],"answer":"board","explain":"CUP + BOARD makes CUPBOARD."},{"id":"cp15","level":3,"stem":"CAR","options":["pet","dog","mat","rug"],"answer":"pet","explain":"CAR + PET makes CARPET — nothing to do with cars or pets."}],"hiddenWord":[{"id":"hw1","level":1,"sentence":"Sarah and Tom arrived first","answer":"hand","options":["hand","sand","head","said"],"explain":"saraH ANDtom — the word HAND is hidden across 'Sarah and'."},{"id":"hw2","level":1,"sentence":"Crisps and lemonade were served","answer":"sand","options":["sand","send","spam","clip"],"explain":"crispS ANDlemonade — SAND hides across 'crisps and'."},{"id":"hw3","level":1,"sentence":"Let us go at once","answer":"goat","options":["goat","gate","coat","gone"],"explain":"GO ATonce — GOAT hides across 'go at'."},{"id":"hw4","level":1,"sentence":"Please rise at dawn tomorrow","answer":"seat","options":["seat","rise","star","east"],"explain":"riSE ATdawn — SEAT hides across 'rise at'."},{"id":"hw5","level":1,"sentence":"The bus now stops here","answer":"snow","options":["snow","stop","bust","nose"],"explain":"buS NOWstops — SNOW hides across 'bus now'."},{"id":"hw6","level":2,"sentence":"Our match in the park finished late","answer":"chin","options":["chin","inch","chip","thin"],"explain":"matCH INthe — CHIN hides across 'match in'."},{"id":"hw7","level":2,"sentence":"The hero seemed very brave","answer":"rose","options":["rose","hero","seem","robe"],"explain":"heRO SEemed — ROSE hides across 'hero seemed'."},{"id":"hw8","level":2,"sentence":"We waited for ten minutes","answer":"fort","options":["fort","fore","tent","rent"],"explain":"FOR Ten — FORT hides across 'for ten'."},{"id":"hw9","level":2,"sentence":"Come along quickly please","answer":"meal","options":["meal","male","come","lane"],"explain":"coME ALong — MEAL hides across 'come along'."},{"id":"hw10","level":2,"sentence":"One engine arrived without delay","answer":"near","options":["near","gear","earn","rain"],"explain":"engiNE ARrived — NEAR hides across 'engine arrived'."},{"id":"hw11","level":3,"sentence":"We heard a short rap on the door","answer":"trap","options":["trap","drum","rapt","door"],"explain":"shorT RAPon — TRAP hides across 'short rap'."},{"id":"hw12","level":3,"sentence":"A rope around the post snapped","answer":"pear","options":["pear","rope","ears","reap"],"explain":"roPE ARound — PEAR hides across 'rope around'."},{"id":"hw13","level":3,"sentence":"My uncle is often very cheerful","answer":"soft","options":["soft","sift","often","loft"],"explain":"iS OFTen — SOFT hides across 'is often'."},{"id":"hw14","level":3,"sentence":"The blue chocolate wrapper tore","answer":"echo","options":["echo","each","chew","late"],"explain":"bluE CHOcolate — ECHO hides across 'blue chocolate'."},{"id":"hw15","level":3,"sentence":"We put both inside the cupboard","answer":"thin","options":["thin","then","both","shin"],"explain":"boTH INside — THIN hides across 'both inside'."}],"moveLetter":[{"id":"ml1","level":1,"from":"BRUSH","to":"TICK","answer":"R","options":["R","B","U","S"],"explain":"Move R: BRUSH becomes BUSH, and TICK becomes TRICK."},{"id":"ml2","level":1,"from":"PLANE","to":"RICE","answer":"P","options":["P","L","A","E"],"explain":"Move P: PLANE becomes LANE, and RICE becomes PRICE."},{"id":"ml3","level":1,"from":"STONE","to":"POT","answer":"S","options":["S","T","O","N"],"explain":"Move S: STONE becomes TONE, and POT becomes SPOT."},{"id":"ml4","level":1,"from":"CROW","to":"FIST","answer":"R","options":["R","C","O","W"],"explain":"Move R: CROW becomes COW, and FIST becomes FIRST."},{"id":"ml5","level":1,"from":"SPIN","to":"PAR","answer":"S","options":["S","P","I","N"],"explain":"Move S: SPIN becomes PIN, and PAR becomes SPAR."},{"id":"ml6","level":2,"from":"GLOVE","to":"RACE","answer":"G","options":["G","L","V","E"],"explain":"Move G: GLOVE becomes LOVE, and RACE becomes GRACE."},{"id":"ml7","level":2,"from":"SEEK","to":"FOR","answer":"K","options":["K","S","E"],"explain":"Move K: SEEK becomes SEE, and FOR becomes FORK."},{"id":"ml8","level":2,"from":"DIRTY","to":"FORT","answer":"Y","options":["Y","D","R","T"],"explain":"Move Y: DIRTY becomes DIRT, and FORT becomes FORTY."},{"id":"ml9","level":2,"from":"STOOL","to":"PIT","answer":"S","options":["S","T","O","L"],"explain":"Move S: STOOL becomes TOOL, and PIT becomes SPIT."},{"id":"ml10","level":2,"from":"STRAND","to":"SPOT","answer":"R","options":["R","S","T","D"],"explain":"Move R: STRAND becomes STAND, and SPOT becomes SPORT."},{"id":"ml11","level":3,"from":"BLOOM","to":"RUSH","answer":"B","options":["B","L","O","M"],"explain":"Move B: BLOOM becomes LOOM, and RUSH becomes BRUSH."},{"id":"ml12","level":3,"from":"SPARK","to":"TICK","answer":"S","options":["S","P","R","K"],"explain":"Move S: SPARK becomes PARK, and TICK becomes STICK."},{"id":"ml13","level":3,"from":"SCOLD","to":"HOT","answer":"S","options":["S","C","O","D"],"explain":"Move S: SCOLD becomes COLD, and HOT becomes SHOT."},{"id":"ml14","level":3,"from":"TINY","to":"ROCK","answer":"Y","options":["Y","T","I","N"],"explain":"Move Y: TINY becomes TIN, and ROCK becomes ROCKY."},{"id":"ml15","level":3,"from":"BROOM","to":"OAT","answer":"B","options":["B","R","O","M"],"explain":"Move B: BROOM becomes ROOM, and OAT becomes BOAT."}],"insertLetter":[{"id":"il1","level":1,"pairs":[["sta","ip"],["bea","ing"]],"answer":"R","options":["R","S","T","N"],"explain":"R completes both pairs: STAR / RIP and BEAR / RING."},{"id":"il2","level":1,"pairs":[["car","able"],["boa","oast"]],"answer":"T","options":["T","D","P","S"],"explain":"T completes both pairs: CART / TABLE and BOAT / TOAST."},{"id":"il3","level":1,"pairs":[["pin","gg"],["tre","dge"]],"answer":"E","options":["E","A","O","I"],"explain":"E completes both pairs: PINE / EGG and TREE / EDGE."},{"id":"il4","level":1,"pairs":[["sea","amp"],["gir","ist"]],"answer":"L","options":["L","T","R","D"],"explain":"L completes both pairs: SEAL / LAMP and GIRL / LIST."},{"id":"il5","level":2,"pairs":[["clic","now"],["bac","ing"]],"answer":"K","options":["K","T","S","N"],"explain":"K completes both pairs: CLICK / KNOW and BACK / KING."},{"id":"il6","level":2,"pairs":[["fla","oat"],["lon","ift"]],"answer":"G","options":["G","T","B","N"],"explain":"G completes both pairs: FLAG / GOAT and LONG / GIFT."},{"id":"il7","level":2,"pairs":[["moo","est"],["bar","ote"]],"answer":"N","options":["N","D","R","T"],"explain":"N completes both pairs: MOON / NEST and BARN / NOTE."},{"id":"il8","level":2,"pairs":[["wor","rum"],["sai","esk"]],"answer":"D","options":["D","K","M","T"],"explain":"D completes both pairs: WORD / DRUM and SAID / DESK."},{"id":"il9","level":2,"pairs":[["shi","age"],["lam","ond"]],"answer":"P","options":["P","N","T","B"],"explain":"P completes both pairs: SHIP / PAGE and LAMP / POND."},{"id":"il10","level":2,"pairs":[["fro","usic"],["far","oth"]],"answer":"M","options":["M","G","W","S"],"explain":"M completes both pairs: FROM / MUSIC and FARM / MOTH."},{"id":"il11","level":3,"pairs":[["lea","rost"],["shel","ence"]],"answer":"F","options":["F","D","P","T"],"explain":"F completes both pairs: LEAF / FROST and SHELF / FENCE."},{"id":"il12","level":3,"pairs":[["dis","otel"],["wis","abit"]],"answer":"H","options":["H","K","T","P"],"explain":"H completes both pairs: DISH / HOTEL and WISH / HABIT."},{"id":"il13","level":3,"pairs":[["brea","ettle"],["des","nee"]],"answer":"K","options":["K","T","D","H"],"explain":"K completes both pairs: BREAK / KETTLE and DESK / KNEE."},{"id":"il14","level":3,"pairs":[["che","ater"],["stra","ing"]],"answer":"W","options":["W","S","T","F"],"explain":"W completes both pairs: CHEW / WATER and STRAW / WING."},{"id":"il15","level":3,"pairs":[["so","ridge"],["cra","anana"]],"answer":"B","options":["B","F","P","T"],"explain":"B completes both pairs: SOB / BRIDGE and CRAB / BANANA."}],"missingThree":[{"id":"mt1","level":1,"sentence":"Mum charged both PHS overnight.","presented":"PHS","full":"PHONES","answer":"ONE","options":["ONE","OAK","OAR","ODD"],"explain":"PH + ONE + S makes PHONES."},{"id":"mt2","level":1,"sentence":"We waited ten MIES for the bus.","presented":"MIES","full":"MINUTES","answer":"NUT","options":["NUT","NET","NEW","NAP"],"explain":"MI + NUT + ES makes MINUTES."},{"id":"mt3","level":1,"sentence":"We marked the date on the CALAR.","presented":"CALAR","full":"CALENDAR","answer":"END","options":["END","EYE","EAR","EGG"],"explain":"CAL + END + AR makes CALENDAR."},{"id":"mt4","level":1,"sentence":"We went to Spain for our summer HOAY.","presented":"HOAY","full":"HOLIDAY","answer":"LID","options":["LID","LIP","LAD","LED"],"explain":"HO + LID + AY makes HOLIDAY."},{"id":"mt5","level":1,"sentence":"We solved the maths PLEM together.","presented":"PLEM","full":"PROBLEM","answer":"ROB","options":["ROB","RIB","ROD","ROT"],"explain":"P + ROB + LEM makes PROBLEM."},{"id":"mt6","level":2,"sentence":"London is the CAAL of England.","presented":"CAAL","full":"CAPITAL","answer":"PIT","options":["PIT","PET","PIE","PIG"],"explain":"CA + PIT + AL makes CAPITAL."},{"id":"mt7","level":2,"sentence":"Piano PRACE takes twenty minutes a day.","presented":"PRACE","full":"PRACTICE","answer":"TIC","options":["TIC","TIN","TIP","TAP"],"explain":"PRAC + TIC + E makes PRACTICE."},{"id":"mt8","level":2,"sentence":"The player moved into a good POION.","presented":"POION","full":"POSITION","answer":"SIT","options":["SIT","SET","SIX","SAT"],"explain":"PO + SIT + ION makes POSITION."},{"id":"mt9","level":2,"sentence":"The STUTS lined up for assembly.","presented":"STUTS","full":"STUDENTS","answer":"DEN","options":["DEN","DEW","DAY","DOG"],"explain":"STU + DEN + TS makes STUDENTS."},{"id":"mt10","level":2,"sentence":"She moved up to the ADCED group.","presented":"ADCED","full":"ADVANCED","answer":"VAN","options":["VAN","VET","VOW","ANT"],"explain":"AD + VAN + CED makes ADVANCED."},{"id":"mt11","level":3,"sentence":"The computers were joined in a NERK.","presented":"NERK","full":"NETWORK","answer":"TWO","options":["TWO","TOE","TOP","TOY"],"explain":"NE + TWO + RK makes NETWORK."},{"id":"mt12","level":3,"sentence":"It took ages to DLOAD the game.","presented":"DLOAD","full":"DOWNLOAD","answer":"OWN","options":["OWN","ONE","OWL","OAK"],"explain":"D + OWN + LOAD makes DOWNLOAD."},{"id":"mt13","level":3,"sentence":"The plant showed rapid GTH.","presented":"GTH","full":"GROWTH","answer":"ROW","options":["ROW","RAW","ROD","ROT"],"explain":"G + ROW + TH makes GROWTH."},{"id":"mt14","level":3,"sentence":"Suncream gives PECTION from the sun.","presented":"PECTION","full":"PROTECTION","answer":"ROT","options":["ROT","RAT","ROD","ROW"],"explain":"P + ROT + ECTION makes PROTECTION."},{"id":"mt15","level":3,"sentence":"Every child deserves a good EDUION.","presented":"EDUION","full":"EDUCATION","answer":"CAT","options":["CAT","CAN","CAP","CAR"],"explain":"EDU + CAT + ION makes EDUCATION."}],"doubleMeaning":[{"id":"dm1","level":1,"pairA":["bounce","jump"],"pairB":["coil","metal spiral"],"options":["spring","hop","wire","summer"],"answer":"spring","explain":"You can SPRING into the air, and a SPRING is a coil of metal."},{"id":"dm2","level":1,"pairA":["glow","brightness"],"pairB":["not heavy","easy to lift"],"options":["light","lamp","feather","shine"],"answer":"light","explain":"LIGHT means brightness, and LIGHT also means not heavy."},{"id":"dm3","level":1,"pairA":["river edge","side of a stream"],"pairB":["place for money","where you save"],"options":["bank","shore","safe","shop"],"answer":"bank","explain":"A river has a BANK, and money is kept in a BANK."},{"id":"dm4","level":1,"pairA":["dog's cry","woof"],"pairB":["tree covering","trunk skin"],"options":["bark","howl","leaf","wood"],"answer":"bark","explain":"A dog BARKS, and BARK covers a tree trunk."},{"id":"dm5","level":1,"pairA":["cricket equipment","used to hit a ball"],"pairB":["flying mammal","night creature"],"options":["bat","glove","owl","club"],"answer":"bat","explain":"You hit a ball with a BAT, and a BAT flies at night."},{"id":"dm6","level":2,"pairA":["part of a tree","bough"],"pairB":["local shop or office","part of a company"],"options":["branch","trunk","store","root"],"answer":"branch","explain":"A tree has a BRANCH, and a bank has a local BRANCH."},{"id":"dm7","level":2,"pairA":["leader","person in charge"],"pairB":["top of the body","where your brain is"],"options":["head","chief","skull","crown"],"answer":"head","explain":"The HEAD teacher is in charge, and your HEAD is the top of your body."},{"id":"dm8","level":2,"pairA":["correct","accurate"],"pairB":["opposite of left","one side"],"options":["right","true","wrong","side"],"answer":"right","explain":"RIGHT means correct, and RIGHT is the opposite of left."},{"id":"dm9","level":2,"pairA":["bird's limb","used to fly"],"pairB":["part of a building","side section"],"options":["wing","beak","tower","roof"],"answer":"wing","explain":"A bird has a WING, and a building can have a WING."},{"id":"dm10","level":2,"pairA":["writing tool","filled with ink"],"pairB":["animal enclosure","where pigs live"],"options":["pen","pencil","cage","sty"],"answer":"pen","explain":"You write with a PEN, and animals are kept in a PEN."},{"id":"dm11","level":3,"pairA":["strike with the foot","boot the ball"],"pairB":["thrill","burst of excitement"],"options":["kick","punch","rush","goal"],"answer":"kick","explain":"You KICK a ball, and you can get a KICK out of something exciting."},{"id":"dm12","level":3,"pairA":["large stone","boulder"],"pairB":["sway gently","move from side to side"],"options":["rock","cliff","swing","stone"],"answer":"rock","explain":"A ROCK is a large stone, and you can ROCK a baby to sleep."},{"id":"dm13","level":3,"pairA":["inside of the hand","where lines are read"],"pairB":["tropical tree","grows coconuts"],"options":["palm","wrist","fern","oak"],"answer":"palm","explain":"Your PALM is part of your hand, and a PALM is a tropical tree."},{"id":"dm14","level":3,"pairA":["to depart","go away"],"pairB":["time off work","a holiday"],"options":["leave","exit","break","travel"],"answer":"leave","explain":"To LEAVE is to go, and workers take annual LEAVE."},{"id":"dm15","level":3,"pairA":["matching set of clothes","jacket and trousers"],"pairB":["one of four in a pack of cards","hearts or spades"],"options":["suit","outfit","deck","dress"],"answer":"suit","explain":"You wear a SUIT, and hearts is a SUIT in cards."}]};
+
+/* ================= PROCEDURAL GENERATORS (tested: 9,000 runs, 0 failures) ======== */
+// Procedural generators for letter/number/code question types.
+// Pure functions, no imports — this source is spliced verbatim into the app.
+
+function mulberry32(seed){let t=seed>>>0;return function(){t+=0x6D2B79F5;let r=Math.imul(t^(t>>>15),1|t);r^=r+Math.imul(r^(r>>>7),61|r);return((r^(r>>>14))>>>0)/4294967296;};}
+function makeRng(){return mulberry32(Math.floor(Math.random()*2147483647));}
+function ri(rng,a,b){return a+Math.floor(rng()*(b-a+1));}
+function pk(rng,arr){return arr[Math.floor(rng()*arr.length)];}
+function shuf(rng,arr){const a=arr.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+const ABC="ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+const L=i=>ABC[i];
+const IX=c=>ABC.indexOf(c);
+
+function finalize(rng,q,answer,rawDistractors){
+  const opts=[answer];
+  for(const d of rawDistractors){
+    if(opts.length>=4)break;
+    if(d!==null&&d!==undefined&&d!==answer&&!opts.includes(d))opts.push(d);
+  }
+  let guard=0;
+  while(opts.length<4&&guard++<50){
+    const d=q._fallback(rng);
+    if(d!==answer&&!opts.includes(d))opts.push(d);
+  }
+  delete q._fallback;
+  q.options=shuf(rng,opts);
+  q.answer=answer;
+  return q;
+}
+
+// ---------- 1. Letter sequences ----------
+function genLetterSeq(level,rng){
+  for(let attempt=0;attempt<200;attempt++){
+    if(level===1||(level===2&&rng()<0.4)){
+      const s=pk(rng,level===1?[1,2,3,-1,-2,-3]:[4,5,-4,-5]);
+      const span=4*s, lo=Math.max(0,-span), hi=Math.min(25,25-span);
+      if(lo>hi)continue;
+      const st=ri(rng,lo,hi);
+      const terms=[0,1,2,3,4].map(k=>st+k*s);
+      if(terms.some(t=>t<0||t>25))continue;
+      const seq=terms.slice(0,4).map(L), ans=L(terms[4]);
+      const q={prompt:"What comes next in this sequence?",mono:seq.join("   ")+"   ?",alphabet:true,
+        explain:"Each letter moves on "+(s>0?s+" place"+(s===1?"":"s"):Math.abs(s)+" place"+(s===-1?"":"s")+" back")+" each time: "+seq.join(" → ")+" → "+ans+".",
+        _fallback:r=>L(ri(r,0,25))};
+      const d=[terms[4]+1,terms[4]-1,terms[4]+s].filter(t=>t>=0&&t<=25).map(L);
+      return finalize(rng,q,ans,d);
+    }
+    if(level===2&&rng()<0.5){
+      const s1=pk(rng,[1,2,3]),s2=pk(rng,[-1,-2,1,2,3].filter(x=>x!==s1));
+      const steps=[s1,s2,s1,s2];
+      const st=ri(rng,0,25);
+      const terms=[st];for(const s of steps)terms.push(terms[terms.length-1]+s);
+      if(terms.some(t=>t<0||t>25))continue;
+      const seq=terms.slice(0,4).map(L),ans=L(terms[4]);
+      const q={prompt:"What comes next in this sequence?",mono:seq.join("   ")+"   ?",alphabet:true,
+        explain:"The steps alternate: "+(s1>0?"+":"")+s1+" then "+(s2>0?"+":"")+s2+". "+seq.join(" → ")+" → "+ans+".",
+        _fallback:r=>L(ri(r,0,25))};
+      const d=[terms[4]+1,terms[4]-1,terms[3]+s1+(s2>0?1:-1)].filter(t=>t>=0&&t<=25).map(L);
+      return finalize(rng,q,ans,d);
+    }
+    if(level===2){
+      const s=pk(rng,[1,2,-1,-2]);
+      const gap=ri(rng,1,3);
+      const span=4*s, lo1=Math.max(0,-span), hi1=Math.min(25,25-span)-gap;
+      if(lo1>hi1)continue;
+      const st=ri(rng,lo1,hi1);
+      const pairs=[0,1,2,3,4].map(k=>[st+k*s,st+gap+k*s]);
+      if(pairs.some(p=>p[0]<0||p[1]>25||p[0]>25||p[1]<0))continue;
+      const seq=pairs.slice(0,4).map(p=>L(p[0])+L(p[1])),ans=L(pairs[4][0])+L(pairs[4][1]);
+      const q={prompt:"What comes next in this sequence of letter pairs?",mono:seq.join("   ")+"   ?",alphabet:true,
+        explain:"Both letters in the pair move "+(s>0?"+"+s:s)+" each time: "+seq.join(" → ")+" → "+ans+".",
+        _fallback:r=>{const a=ri(r,0,24);return L(a)+L(ri(r,a,25));}};
+      const d=[L(pairs[4][0])+L(Math.min(25,pairs[4][1]+1)),L(Math.max(0,pairs[4][0]-1))+L(pairs[4][1]),L(pairs[4][0]+ (s>0?-1:1))+L(pairs[4][1]+(s>0?-1:1))].filter(x=>x.length===2&&!x.includes("undefined"));
+      return finalize(rng,q,ans,d);
+    }
+    if(rng()<0.5){ // L3 pairs, different deltas
+      const s1=pk(rng,[1,2,3,-1,-2]),s2=pk(rng,[1,2,3,-1,-2,-3].filter(x=>x!==s1));
+      const st1=ri(rng,Math.max(0,-4*s1),Math.min(25,25-4*s1));
+      const st2=ri(rng,Math.max(0,-4*s2),Math.min(25,25-4*s2));
+      if(st1<0||st2<0)continue;
+      const pairs=[0,1,2,3,4].map(k=>[st1+k*s1,st2+k*s2]);
+      if(pairs.some(p=>p[0]<0||p[0]>25||p[1]<0||p[1]>25))continue;
+      const seq=pairs.slice(0,4).map(p=>L(p[0])+L(p[1])),ans=L(pairs[4][0])+L(pairs[4][1]);
+      const q={prompt:"What comes next in this sequence of letter pairs?",mono:seq.join("   ")+"   ?",alphabet:true,
+        explain:"The first letters move "+(s1>0?"+"+s1:s1)+", the second letters move "+(s2>0?"+"+s2:s2)+": next pair is "+ans+".",
+        _fallback:r=>{const a=ri(r,0,25);return L(a)+L(ri(r,0,25));}};
+      const d=[L(pairs[4][0])+L(Math.max(0,Math.min(25,pairs[4][1]-s2))),L(Math.max(0,Math.min(25,pairs[4][0]+1)))+L(pairs[4][1]),L(pairs[4][0])+L(Math.max(0,Math.min(25,pairs[4][1]+1)))];
+      return finalize(rng,q,ans,d);
+    }
+    { // L3 increasing step
+      const base=ri(rng,1,2),dir=pk(rng,[1,-1]);
+      const steps=[base,base+1,base+2,base+3].map(x=>x*dir);
+      const tot=steps.reduce((a,b)=>a+b,0);
+      const lo=Math.max(0,-tot),hi=Math.min(25,25-tot);
+      if(lo>hi)continue;
+      const st=ri(rng,lo,hi);
+      const terms=[st];for(const s of steps)terms.push(terms[terms.length-1]+s);
+      if(terms.some(t=>t<0||t>25))continue;
+      const seq=terms.slice(0,4).map(L),ans=L(terms[4]);
+      const q={prompt:"What comes next in this sequence?",mono:seq.join("   ")+"   ?",alphabet:true,
+        explain:"The step grows by one each time ("+steps.slice(0,3).map(s=>(s>0?"+":"")+s).join(", ")+"…), so the next step is "+(steps[3]>0?"+":"")+steps[3]+", giving "+ans+".",
+        _fallback:r=>L(ri(r,0,25))};
+      const d=[terms[4]+dir,terms[4]-dir,terms[3]+steps[2]].filter(t=>t>=0&&t<=25).map(L);
+      return finalize(rng,q,ans,d);
+    }
+  }
+  throw new Error("letterSeq generation failed");
+}
+
+// ---------- 2. Number sequences ----------
+function genNumberSeq(level,rng){
+  for(let attempt=0;attempt<200;attempt++){
+    let terms,explain;
+    if(level===1){
+      if(rng()<0.7){const s=pk(rng,[2,3,4,5,6,7,8,9,-2,-3,-4,-5]);const st=s>0?ri(rng,1,30):ri(rng,30,60);
+        terms=[0,1,2,3,4].map(k=>st+k*s);
+        explain="The numbers go "+(s>0?"up":"down")+" in "+Math.abs(s)+"s: "+terms.slice(0,4).join(", ")+" … so the next is "+terms[4]+".";
+      }else{const st=ri(rng,1,4);terms=[0,1,2,3,4].map(k=>st*Math.pow(2,k));
+        explain="Each number doubles: "+terms.slice(0,4).join(", ")+" … so the next is "+terms[4]+".";}
+    }else if(level===2){
+      const mode=ri(rng,1,3);
+      if(mode===1){const a=ri(rng,2,9);let b=ri(rng,2,9);if(b===a)b=a+1;const st=ri(rng,1,20);
+        terms=[st];for(let k=0;k<4;k++)terms.push(terms[terms.length-1]+(k%2===0?a:b));
+        explain="The steps alternate: +"+a+" then +"+b+". Next step is +"+(4%2===0?a:b)+", giving "+terms[4]+".";
+      }else if(mode===2){const c=ri(rng,1,3);const st=ri(rng,1,5);
+        terms=[st];for(let k=0;k<4;k++)terms.push(terms[terms.length-1]*2+c);
+        if(terms[4]>400)continue;
+        explain="Each number is double the one before, plus "+c+". So next is "+terms[3]+" × 2 + "+c+" = "+terms[4]+".";
+      }else{const k0=ri(rng,1,8);terms=[0,1,2,3,4].map(k=>(k0+k)*(k0+k));
+        explain="These are square numbers: "+(k0)+"², "+(k0+1)+"², … so the next is "+(k0+4)+"² = "+terms[4]+".";}
+    }else{
+      const mode=ri(rng,1,3);
+      if(mode===1){let a=ri(rng,1,9),b=ri(rng,1,9);terms=[a,b];for(let k=0;k<4;k++)terms.push(terms[terms.length-1]+terms[terms.length-2]);
+        explain="Each number is the sum of the two before it: "+terms[3]+" + "+terms[4]+" = "+terms[5]+".";
+      }else if(mode===2){const d=ri(rng,1,4),e=ri(rng,1,3);const st=ri(rng,1,15);
+        terms=[st];for(let k=0;k<4;k++)terms.push(terms[terms.length-1]+d+k*e);
+        explain="The gap grows by "+e+" each time (+"+d+", +"+(d+e)+", +"+(d+2*e)+"…), so the next number is "+terms[4]+".";
+      }else{const sA=ri(rng,2,6),sB=ri(rng,2,6);const a0=ri(rng,1,15),b0=ri(rng,1,15);
+        terms=[];for(let k=0;k<7;k++)terms.push(k%2===0?a0+(k/2)*sA:b0+((k-1)/2)*sB);
+        explain="Two sequences take turns: the 1st, 3rd, 5th… numbers go up in "+sA+"s, and the 2nd, 4th, 6th… go up in "+sB+"s. The next belongs to the first sequence: "+terms[6]+".";}
+    }
+    const shown=terms.slice(0,terms.length-1),ans=terms[terms.length-1];
+    if(terms.some(t=>t<0||t>900||!Number.isInteger(t)))continue;
+    const q={prompt:"What comes next in this sequence?",mono:shown.join(",  ")+",  ?",alphabet:false,explain,
+      _fallback:r=>String(ans+ri(r,2,15))};
+    const gap=ans-shown[shown.length-1];
+    const d=[ans+1,ans-1,shown[shown.length-1]+Math.max(1,Math.abs(gap)-1),ans+2].filter(x=>x>=0&&x!==ans).map(String);
+    return finalize(rng,q,String(ans),d);
+  }
+  throw new Error("numberSeq generation failed");
+}
+
+// ---------- 3. Word codes ----------
+const W3=["CAT","DOG","SUN","PEN","HAT","BED","CUP","MAP","LEG","JAM","FOX","WEB","ANT","LOG","GEM","BUS","VAN","PIG","OWL","KEY","EGG","INK","OAK","TIN","NUT","FIG","HEN","JAR","KIT","LIP","MUD","NET","PAN","RAT","RUG","SAW","TAP","FAN","BAG","COT"];
+const W4=["FISH","FROG","LAMP","DESK","MILK","RING","SONG","WIND","GOLD","PARK","FARM","BIRD","CAKE","DOOR","HAND","KING","LION","MOON","NEST","RAIN","SHIP","TREE","STAR","WOLF","DRUM","KITE","BOAT","COAT","ROSE","SAND","BELL","FORK","GATE","HILL","JUMP","LEAF","MASK","POND","TENT","WING"];
+function shiftWord(w,s){let out="";for(const c of w){const i=IX(c)+s;if(i<0||i>25)return null;out+=L(i);}return out;}
+function mirrorWord(w){let out="";for(const c of w)out+=L(25-IX(c));return out;}
+function patternWord(w,dir){let out="";for(let i=0;i<w.length;i++){const j=IX(w[i])+dir*(i+1);if(j<0||j>25)return null;out+=L(j);}return out;}
+function genWordCode(level,rng){
+  for(let attempt=0;attempt<400;attempt++){
+    const pool=level===1?W3:(rng()<0.5?W3:W4);
+    const a=pk(rng,pool);let b=pk(rng,pool);if(b===a)continue;
+    let codeA,codeB,ruleName,explainRule,wrong;
+    if(level===1){
+      const s=pk(rng,[1,-1]);
+      codeA=shiftWord(a,s);codeB=shiftWord(b,s);
+      if(!codeA||!codeB)continue;
+      explainRule="each letter moves "+(s>0?"forward 1 place":"back 1 place")+" in the alphabet";
+      wrong=r=>shiftWord(b,pk(r,[s+1,s-1,-s].filter(x=>x!==0)))||shiftWord(b,2*s)||null;
+    }else if(level===2){
+      const s=pk(rng,[2,3,-2,-3]);
+      codeA=shiftWord(a,s);codeB=shiftWord(b,s);
+      if(!codeA||!codeB)continue;
+      explainRule="each letter moves "+(s>0?"forward "+s+" places":"back "+Math.abs(s)+" places");
+      wrong=r=>shiftWord(b,pk(r,[s+1,s-1,-s]))||null;
+    }else{
+      if(rng()<0.5){codeA=mirrorWord(a);codeB=mirrorWord(b);
+        explainRule="each letter swaps with its mirror letter from the other end of the alphabet (A↔Z, B↔Y, C↔X…)";
+        wrong=r=>{const i=ri(r,0,b.length-1);const m=mirrorWord(b);const j=Math.min(25,Math.max(0,IX(m[i])+pk(r,[1,-1])));return m.slice(0,i)+L(j)+m.slice(i+1);};
+      }else{const dir=pk(rng,[1,-1]);
+        codeA=patternWord(a,dir);codeB=patternWord(b,dir);
+        if(!codeA||!codeB)continue;
+        explainRule="the letters move "+(dir>0?"+1, +2, +3…":"−1, −2, −3…")+" in turn";
+        wrong=r=>shiftWord(b,dir*pk(r,[1,2]))||patternWord(b,-dir)||null;}
+    }
+    const decode=level>=2&&rng()<0.5;
+    if(decode){
+      const others=shuf(rng,pool.filter(w=>w!==b&&w!==a&&w.length===b.length)).slice(0,3);
+      const q={prompt:"In this code, the word "+a+" is written as "+codeA+". What word does the code "+codeB+" stand for?",mono:a+"  →  "+codeA,alphabet:true,
+        explain:"In this code "+explainRule+". Working backwards, "+codeB+" spells "+b+".",
+        _fallback:r=>pk(r,pool.filter(w=>w.length===b.length))};
+      return finalize(rng,q,b,others);
+    }
+    const q={prompt:"In this code, the word "+a+" is written as "+codeA+". How would you write "+b+" in the same code?",mono:a+"  →  "+codeA,alphabet:true,
+      explain:"In this code "+explainRule+", so "+b+" becomes "+codeB+".",
+      _fallback:r=>{const i=ri(r,0,codeB.length-1);const j=Math.min(25,Math.max(0,IX(codeB[i])+pk(r,[1,-1,2])));return codeB.slice(0,i)+L(j)+codeB.slice(i+1);}};
+    const d=[wrong(rng),wrong(rng),wrong(rng)];
+    return finalize(rng,q,codeB,d);
+  }
+  throw new Error("wordCode generation failed");
+}
+
+// ---------- 4. Letter sums (A=1 … Z=26) ----------
+function genLetterSum(level,rng){
+  const val=c=>IX(c)+1;
+  for(let attempt=0;attempt<200;attempt++){
+    if(level===1){
+      const a=L(ri(rng,0,9)),b=L(ri(rng,0,9));
+      const ans=val(a)+val(b);
+      const q={prompt:"If A = 1, B = 2, C = 3 and so on, what is "+a+" + "+b+"?",mono:a+" + "+b+" = ?",alphabet:true,
+        explain:a+" = "+val(a)+" and "+b+" = "+val(b)+", so "+a+" + "+b+" = "+ans+".",
+        _fallback:r=>String(ans+ri(r,1,6))};
+      return finalize(rng,q,String(ans),[ans+1,ans-1,ans+2].map(String));
+    }
+    if(level===2){
+      if(rng()<0.5){
+        const a=L(ri(rng,8,19)),b=L(ri(rng,0,7));
+        const op=pk(rng,["+","−"]);
+        const ans=op==="+"?val(a)+val(b):val(a)-val(b);
+        if(ans<1)continue;
+        const q={prompt:"If A = 1, B = 2, C = 3 and so on, what is "+a+" "+op+" "+b+"?",mono:a+" "+op+" "+b+" = ?",alphabet:true,
+          explain:a+" = "+val(a)+" and "+b+" = "+val(b)+", so the answer is "+ans+".",
+          _fallback:r=>String(Math.max(1,ans+ri(r,1,5)))};
+        return finalize(rng,q,String(ans),[ans+1,ans-1,ans+2].map(String));
+      }
+      const a=L(ri(rng,0,11)),b=L(ri(rng,0,11));
+      const sum=val(a)+val(b);
+      if(sum>26)continue;
+      const ans=L(sum-1);
+      const q={prompt:"If A = 1, B = 2, C = 3 and so on, which letter has the same value as "+a+" + "+b+"?",mono:a+" + "+b+" = ?",alphabet:true,
+        explain:a+" ("+val(a)+") + "+b+" ("+val(b)+") = "+sum+", and the letter with value "+sum+" is "+ans+".",
+        _fallback:r=>L(ri(r,0,25))};
+      const d=[sum,sum-2,sum+1].filter(x=>x>=1&&x<=26).map(x=>L(x-1));
+      return finalize(rng,q,ans,d);
+    }
+    const a=L(ri(rng,2,12)),b=L(ri(rng,2,12)),c=L(ri(rng,0,9));
+    const res=val(a)+val(b)-val(c);
+    if(res<1||res>26)continue;
+    const ans=L(res-1);
+    const q={prompt:"If A = 1, B = 2, C = 3 and so on, which letter has the same value as "+a+" + "+b+" − "+c+"?",mono:a+" + "+b+" − "+c+" = ?",alphabet:true,
+      explain:val(a)+" + "+val(b)+" − "+val(c)+" = "+res+", and the letter with value "+res+" is "+ans+".",
+      _fallback:r=>L(ri(r,0,25))};
+    const d=[res,res-2,res+1].filter(x=>x>=1&&x<=26).map(x=>L(x-1));
+    return finalize(rng,q,ans,d);
+  }
+  throw new Error("letterSum generation failed");
+}
+
+// ---------- 5. Related numbers ----------
+const RN_RULES=[
+  {id:"add",lv:1,f:(a,b)=>a+b,ok:(a,b)=>true,text:"the first number plus the second",eg:(a,b,m)=>a+" + "+b+" = "+m},
+  {id:"sub",lv:1,f:(a,b)=>b-a,ok:(a,b)=>b>a,text:"the second number minus the first",eg:(a,b,m)=>b+" − "+a+" = "+m},
+  {id:"mult",lv:2,f:(a,b)=>a*b,ok:(a,b)=>a<=7&&b<=7,text:"the first number times the second",eg:(a,b,m)=>a+" × "+b+" = "+m},
+  {id:"half",lv:2,f:(a,b)=>(a+b)/2,ok:(a,b)=>(a+b)%2===0,text:"half of the two numbers added together",eg:(a,b,m)=>"("+a+" + "+b+") ÷ 2 = "+m},
+  {id:"twoAplusB",lv:2,f:(a,b)=>2*a+b,ok:(a,b)=>true,text:"double the first number, plus the second",eg:(a,b,m)=>"2 × "+a+" + "+b+" = "+m},
+  {id:"sumTimes2",lv:3,f:(a,b)=>(a+b)*2,ok:(a,b)=>a+b<=20,text:"the two numbers added together, then doubled",eg:(a,b,m)=>"("+a+" + "+b+") × 2 = "+m},
+  {id:"multMinusA",lv:3,f:(a,b)=>a*b-a,ok:(a,b)=>a<=7&&b<=7,text:"the first times the second, minus the first",eg:(a,b,m)=>a+" × "+b+" − "+a+" = "+m},
+  {id:"multPlusSum",lv:3,f:(a,b)=>a*b+a+b,ok:(a,b)=>a<=6&&b<=6,text:"the first times the second, plus both numbers",eg:(a,b,m)=>a+" × "+b+" + "+a+" + "+b+" = "+m},
+];
+function genRelatedNumbers(level,rng){
+  const rules=RN_RULES.filter(r=>r.lv===level);
+  for(let attempt=0;attempt<400;attempt++){
+    const R=pk(rng,rules);
+    const mk=()=>{for(let t=0;t<60;t++){const a=ri(rng,2,9),b=ri(rng,2,12);if(R.ok(a,b)&&R.f(a,b)>=1&&R.f(a,b)<=99&&Number.isInteger(R.f(a,b)))return[a,b];}return null;};
+    const p1=mk(),p2=mk(),pq=mk();
+    if(!p1||!p2||!pq)continue;
+    if((p1[0]===p2[0]&&p1[1]===p2[1])||(p1[0]===pq[0]&&p1[1]===pq[1])||(p2[0]===pq[0]&&p2[1]===pq[1]))continue;
+    const m1=R.f(...p1),m2=R.f(...p2),ans=R.f(...pq);
+    let collision=false;
+    for(const R2 of RN_RULES){
+      if(R2.id===R.id)continue;
+      if(R2.ok(...p1)&&R2.ok(...p2)&&R2.f(...p1)===m1&&R2.f(...p2)===m2&&Number.isInteger(R2.f(...p1))){
+        if(!R2.ok(...pq)||R2.f(...pq)!==ans){collision=true;break;}
+      }
+    }
+    if(collision)continue;
+    const tri=(a,m,b)=>"( "+a+"  [ "+m+" ]  "+b+" )";
+    const q={prompt:"The three numbers in each group are related in the same way. What number replaces the question mark?",
+      mono:tri(p1[0],m1,p1[1])+"   "+tri(p2[0],m2,p2[1])+"   "+tri(pq[0],"?",pq[1]),alphabet:false,
+      explain:"In each group, the middle number is "+R.text+": "+R.eg(p1[0],p1[1],m1)+" and "+R.eg(p2[0],p2[1],m2)+". So here it is "+R.eg(pq[0],pq[1],ans)+".",
+      _fallback:r=>String(ans+ri(r,1,9))};
+    const d=[];
+    for(const R2 of RN_RULES){if(R2.id!==R.id&&R2.ok(...pq)){const v=R2.f(...pq);if(Number.isInteger(v)&&v>=1&&v<=99)d.push(String(v));}}
+    d.push(String(ans+1),String(ans-1));
+    return finalize(rng,q,String(ans),shuf(rng,d.filter(x=>Number(x)>=0)));
+  }
+  throw new Error("relatedNumbers generation failed");
+}
+
+const GENERATORS={letterSeq:genLetterSeq,numberSeq:genNumberSeq,wordCode:genWordCode,letterSum:genLetterSum,relatedNumbers:genRelatedNumbers};
+
+
+
+/* ================= TYPES ================= */
+const TYPE_META = {
+  letterSeq:      { label: "Letter sequences",     group: "Letters & codes" },
+  wordCode:       { label: "Word codes",           group: "Letters & codes" },
+  letterSum:      { label: "Letter sums",          group: "Letters & codes" },
+  moveLetter:     { label: "Move a letter",        group: "Letters & codes" },
+  insertLetter:   { label: "Insert a letter",      group: "Letters & codes" },
+  synonym:        { label: "Closest meaning",      group: "Words & meanings" },
+  antonym:        { label: "Opposites",            group: "Words & meanings" },
+  oddOneOut:      { label: "Odd one out",          group: "Words & meanings" },
+  analogy:        { label: "Word pairs",           group: "Words & meanings" },
+  compound:       { label: "Compound words",       group: "Words & meanings" },
+  doubleMeaning:  { label: "Double meanings",      group: "Words & meanings" },
+  hiddenWord:     { label: "Hidden words",         group: "Words & meanings" },
+  missingThree:   { label: "Missing three letters",group: "Words & meanings" },
+  numberSeq:      { label: "Number sequences",     group: "Numbers" },
+  relatedNumbers: { label: "Related numbers",      group: "Numbers" },
+};
+const ALL_TYPES = Object.keys(TYPE_META);
+const PROCEDURAL = Object.keys(GENERATORS);
+
+/* ================= CURATED → QUESTION ================= */
+function formatCurated(t, item, rng) {
+  const base = { typeId: t, level: item.level, curatedId: item.id, explain: item.explain, answer: item.answer, options: shuf(rng, item.options) };
+  switch (t) {
+    case "synonym":      return { ...base, prompt: "Which word is closest in meaning to the word in capitals?", big: item.target };
+    case "antonym":      return { ...base, prompt: "Which word is most opposite in meaning to the word in capitals?", big: item.target };
+    case "oddOneOut":    return { ...base, prompt: "Four of these words go together. Which one does not belong?" };
+    case "analogy":      return { ...base, prompt: "Complete the sentence in the most sensible way.", line: item.a + " is to " + item.b + "  as  " + item.c + " is to …" };
+    case "compound":     return { ...base, prompt: "Which word joins on to the word in capitals to make one new, real word?", big: item.stem + " + ___" };
+    case "hiddenWord":   return { ...base, prompt: "A four-letter word is hidden at the end of one word and the start of the next. Which is it?", line: "“" + item.sentence + "”" };
+    case "moveLetter":   return { ...base, prompt: "Move one letter from the first word into the second word, so that both make new words. Which letter moves?", mono: item.from + "   →   " + item.to };
+    case "insertLetter": return { ...base, prompt: "The same letter finishes the first word and starts the second word — in both pairs. Which letter is it?", mono: item.pairs.map(p => p[0] + " _ " + p[1]).join("      ") };
+    case "missingThree": return { ...base, prompt: "Three letters in a row have been removed from the word in capitals. The missing letters spell a real three-letter word. Which?", line: "“" + item.sentence + "”" };
+    case "doubleMeaning":return { ...base, prompt: "Which word goes equally well with both pairs of words?", line: "(" + item.pairA.join(", ") + ")      (" + item.pairB.join(", ") + ")" };
+    default:             return base;
+  }
+}
+function pickCurated(t, level, rng, st) {
+  const bank = BANKS[t];
+  const rec = st.recent[t] || [];
+  let pool = bank.filter(i => i.level === level);
+  if (!pool.length) pool = bank.filter(i => Math.abs(i.level - level) === 1);
+  if (!pool.length) pool = bank;
+  let fresh = pool.filter(i => !rec.includes(i.id));
+  if (!fresh.length) fresh = pool;
+  const item = pk(rng, fresh);
+  st.recent[t] = [item.id, ...rec].slice(0, 10);
+  return formatCurated(t, item, rng);
+}
+function makeQuestion(t, level, rng, st) {
+  if (GENERATORS[t]) { const q = GENERATORS[t](level, rng); q.typeId = t; q.level = level; return q; }
+  return pickCurated(t, level, rng, st);
+}
+
+/* ================= STATE ================= */
+const KEY = "smma-vr-state-v1";
+function freshTypeStat() { return { level: 1, win: [], answered: 0, correct: 0 }; }
+function defaultState() {
+  const types = {}; const recent = {};
+  for (const t of ALL_TYPES) { types[t] = freshTypeStat(); recent[t] = []; }
+  return { v: 1, totals: { answered: 0, correct: 0, drills: 0, mocks: 0 }, streak: { current: 0, best: 0, last: null }, types, recent, mocks: [] };
+}
+function mergeState(loaded) {
+  const d = defaultState();
+  if (!loaded || typeof loaded !== "object") return d;
+  const s = { ...d, ...loaded, totals: { ...d.totals, ...(loaded.totals || {}) }, streak: { ...d.streak, ...(loaded.streak || {}) }, types: { ...d.types }, recent: { ...d.recent }, mocks: Array.isArray(loaded.mocks) ? loaded.mocks : [] };
+  for (const t of ALL_TYPES) { if (loaded.types && loaded.types[t]) s.types[t] = { ...freshTypeStat(), ...loaded.types[t] }; if (loaded.recent && loaded.recent[t]) s.recent[t] = loaded.recent[t]; }
+  return s;
+}
+async function loadState() {
+  try { const r = await window.storage.get(KEY); if (r && r.value) return { st: mergeState(JSON.parse(r.value)), ok: true }; } catch (e) {}
+  try { await window.storage.set(KEY, JSON.stringify(defaultState())); return { st: defaultState(), ok: true }; } catch (e) {}
+  return { st: defaultState(), ok: false };
+}
+function saveState(st) { try { window.storage.set(KEY, JSON.stringify(st)); } catch (e) {} }
+
+/* ================= ADAPTIVE + SESSION BUILDING ================= */
+function recordAnswer(st, t, ok) {
+  st.totals.answered += 1; if (ok) st.totals.correct += 1;
+  const s = st.types[t];
+  s.answered += 1; if (ok) s.correct += 1;
+  s.win = [...s.win, ok ? 1 : 0].slice(-8);
+  if (s.win.length === 8) {
+    const sum = s.win.reduce((a, b) => a + b, 0);
+    if (sum >= 7 && s.level < 3) { s.level += 1; s.win = []; }
+    else if (sum <= 3 && s.level > 1) { s.level -= 1; s.win = []; }
+  }
+}
+function typeAccuracy(st, t) { const s = st.types[t]; return (s.correct + 3) / (s.answered + 5); }
+function pickWeighted(rng, entries) {
+  const tot = entries.reduce((a, e) => a + e[1], 0); let r = rng() * tot;
+  for (const [t, w] of entries) { r -= w; if (r <= 0) return t; }
+  return entries[entries.length - 1][0];
+}
+function buildDrill(st, rng) {
+  const counts = {}; const qs = [];
+  while (qs.length < 12) {
+    const entries = ALL_TYPES.filter(t => (counts[t] || 0) < 2).map(t => [t, Math.max(0.05, 1.06 - typeAccuracy(st, t))]);
+    const t = pickWeighted(rng, entries);
+    counts[t] = (counts[t] || 0) + 1;
+    qs.push(makeQuestion(t, st.types[t].level, rng, st));
+  }
+  return shuf(rng, qs);
+}
+function buildFocus(st, rng, t) {
+  const qs = []; for (let i = 0; i < 8; i++) qs.push(makeQuestion(t, st.types[t].level, rng, st));
+  return qs;
+}
+function buildMock(st, rng, kind) {
+  const list = kind === "full" ? ALL_TYPES.flatMap(t => [t, t, t, t]) : [...ALL_TYPES, ...PROCEDURAL];
+  const qs = list.map(t => makeQuestion(t, rng() < 0.7 ? 3 : 2, rng, st));
+  return shuf(rng, qs);
+}
+
+/* ================= SMALL HELPERS ================= */
+function todayStr() { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+function yesterdayStr() { const d = new Date(); d.setDate(d.getDate() - 1); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+function fmtDate(iso) { const d = new Date(iso); return String(d.getDate()).padStart(2, "0") + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + d.getFullYear(); }
+function fmtClock(s) { const m = Math.floor(s / 60); const ss = String(Math.max(0, s % 60)).padStart(2, "0"); return m + ":" + ss; }
+
+/* ================= STYLE ================= */
+const STYLE = `
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap');
+:root{
+  --paper:#F4F7FA; --ink:#16324A; --cobalt:#2B5CD9; --pencil:#E9A93C;
+  --leaf:#1F9D6B; --berry:#D2493C; --line:#D8E2EC; --card:#FFFFFF; --muted:#5B7187;
+}
+.vr-root{background:var(--paper);color:var(--ink);min-height:100vh;font-family:ui-rounded,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+.vr-display{font-family:'Space Grotesk',ui-rounded,-apple-system,sans-serif;font-weight:700;letter-spacing:-0.01em;}
+.vr-mono{font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;}
+.vr-card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 1px 2px rgba(22,50,74,0.05);}
+.vr-strip{display:flex;flex-wrap:wrap;gap:2px;justify-content:center;}
+.vr-strip span{font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:12px;font-weight:600;color:var(--muted);background:var(--card);border:1px solid var(--line);border-radius:5px;width:21px;height:24px;display:flex;align-items:center;justify-content:center;}
+.vr-opt{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--card);border:2px solid var(--line);border-radius:14px;padding:14px 16px;font-size:17px;font-weight:600;color:var(--ink);cursor:pointer;transition:border-color .12s,transform .08s,background .12s;}
+.vr-opt:hover:not(:disabled){border-color:var(--cobalt);}
+.vr-opt:active:not(:disabled){transform:scale(0.985);}
+.vr-opt:disabled{cursor:default;}
+.vr-opt.picked-neutral{border-color:var(--cobalt);background:#EEF3FD;}
+.vr-opt.picked-right{border-color:var(--leaf);background:#EAF7F1;}
+.vr-opt.picked-wrong{border-color:var(--berry);background:#FBEEEC;}
+.vr-opt.reveal{border-color:var(--leaf);}
+.vr-feedback{animation:vrSlide .22s ease-out;border-radius:14px;padding:14px 16px;}
+@keyframes vrSlide{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+.vr-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:14px;font-weight:700;cursor:pointer;border:none;transition:transform .08s,opacity .12s;}
+.vr-btn:active{transform:scale(0.98);}
+.vr-btn-primary{background:var(--cobalt);color:#fff;padding:14px 22px;font-size:17px;}
+.vr-btn-ghost{background:transparent;color:var(--cobalt);padding:10px 14px;font-size:15px;}
+.vr-btn:focus-visible,.vr-opt:focus-visible,button:focus-visible{outline:3px solid var(--cobalt);outline-offset:2px;}
+.vr-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:600;color:var(--muted);}
+.vr-bar{height:8px;border-radius:99px;background:var(--line);overflow:hidden;}
+.vr-bar>div{height:100%;border-radius:99px;background:var(--cobalt);}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important;}}
+`;
+
+/* ================= SHARED COMPONENTS ================= */
+function AlphabetStrip() {
+  return (
+    <div className="vr-strip my-3" role="img" aria-label="Alphabet from A to Z">
+      {"ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").map(c => <span key={c}>{c}</span>)}
+    </div>
+  );
+}
+function LevelDots({ n }) {
+  return <span className="vr-mono" style={{ color: "var(--pencil)", fontSize: 13, letterSpacing: 2 }}>{"●".repeat(n)}{"○".repeat(3 - n)}</span>;
+}
+function TopBar({ left, centre, right }) {
+  return (
+    <div className="flex items-center justify-between gap-2 py-3">
+      <div className="flex items-center gap-2 min-w-0">{left}</div>
+      <div className="flex-1 text-center">{centre}</div>
+      <div className="flex items-center gap-2 justify-end">{right}</div>
+    </div>
+  );
+}
+function ExitButton({ onExit }) {
+  const [arm, setArm] = useState(false);
+  useEffect(() => { if (!arm) return; const id = setTimeout(() => setArm(false), 2500); return () => clearTimeout(id); }, [arm]);
+  return arm ? (
+    <button className="vr-btn vr-btn-ghost" style={{ color: "var(--berry)" }} onClick={onExit}>Exit — sure?</button>
+  ) : (
+    <button className="vr-btn vr-btn-ghost" onClick={() => setArm(true)} aria-label="Exit session"><ChevronLeft size={18} />Exit</button>
+  );
+}
+function QuestionCard({ q, picked, onPick, locked, showFeedback }) {
+  return (
+    <div className="vr-card p-5">
+      <div style={{ color: "var(--muted)", fontSize: 13, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>{TYPE_META[q.typeId].label}</div>
+      <p className="mt-2 text-[17px] leading-snug font-semibold">{q.prompt}</p>
+      {q.big && <div className="vr-display text-center my-4" style={{ fontSize: 30 }}>{q.big}</div>}
+      {q.line && <div className="text-center my-4" style={{ fontSize: 19, fontWeight: 600 }}>{q.line}</div>}
+      {q.mono && <div className="vr-mono text-center my-4" style={{ fontSize: 21, fontWeight: 700, letterSpacing: "0.04em", overflowWrap: "anywhere" }}>{q.mono}</div>}
+      {q.alphabet && <AlphabetStrip />}
+      <div className="grid gap-2.5 mt-4">
+        {q.options.map(opt => {
+          let cls = "vr-opt";
+          if (!locked && opt === picked) cls += " picked-neutral";
+          if (locked) {
+            if (opt === picked) cls += opt === q.answer ? " picked-right" : " picked-wrong";
+            else if (opt === q.answer && showFeedback) cls += " reveal";
+          }
+          return (
+            <button key={opt} className={cls} disabled={locked} onClick={() => onPick(opt)}>
+              {locked && opt === q.answer && <Check size={20} style={{ color: "var(--leaf)", flexShrink: 0 }} />}
+              {locked && opt === picked && opt !== q.answer && <X size={20} style={{ color: "var(--berry)", flexShrink: 0 }} />}
+              <span style={{ overflowWrap: "anywhere" }}>{opt}</span>
+            </button>
+          );
+        })}
+      </div>
+      {locked && showFeedback && (
+        <div className="vr-feedback mt-4" style={{ background: picked === q.answer ? "#EAF7F1" : "#FBEEEC", border: "1px solid " + (picked === q.answer ? "var(--leaf)" : "var(--berry)") }}>
+          <div className="font-bold" style={{ color: picked === q.answer ? "var(--leaf)" : "var(--berry)" }}>{picked === q.answer ? "Correct" : "Not quite — the answer is " + q.answer}</div>
+          <div className="mt-1 text-[15px]" style={{ color: "var(--ink)" }}>{q.explain}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+/* ================= PRACTICE FLOW (drill + focus) ================= */
+function PracticeFlow({ st, commit, kind, focusType, onDone, onExit }) {
+  const [qs, setQs] = useState(null);
+  const [idx, setIdx] = useState(0);
+  const [picked, setPicked] = useState(null);
+  const [score, setScore] = useState(0);
+  useEffect(() => {
+    const next = structuredClone(st);
+    const rng = makeRng();
+    const built = kind === "drill" ? buildDrill(next, rng) : buildFocus(next, rng, focusType);
+    commit(next);
+    setQs(built);
+  }, []);
+  if (!qs) return null;
+  const q = qs[idx];
+  const locked = picked !== null;
+
+  function handlePick(opt) {
+    if (locked) return;
+    setPicked(opt);
+    const ok = opt === q.answer;
+    if (ok) setScore(s => s + 1);
+    const next = structuredClone(st);
+    recordAnswer(next, q.typeId, ok);
+    commit(next);
+  }
+  function handleNext() {
+    if (idx + 1 < qs.length) { setIdx(idx + 1); setPicked(null); return; }
+    const next = structuredClone(st);
+    if (kind === "drill") {
+      next.totals.drills += 1;
+      const today = todayStr();
+      if (next.streak.last !== today) {
+        next.streak.current = next.streak.last === yesterdayStr() ? next.streak.current + 1 : 1;
+        next.streak.best = Math.max(next.streak.best, next.streak.current);
+        next.streak.last = today;
+      }
+    }
+    commit(next);
+    onDone({ score, total: qs.length });
+  }
+
+  return (
+    <div>
+      <TopBar
+        left={<ExitButton onExit={onExit} />}
+        centre={<span className="font-bold text-[15px]" style={{ color: "var(--muted)" }}>{idx + 1} of {qs.length}</span>}
+        right={<span className="vr-chip">{score} right</span>}
+      />
+      <div className="vr-bar mb-4"><div style={{ width: ((idx + (locked ? 1 : 0)) / qs.length * 100) + "%" }} /></div>
+      <QuestionCard q={q} picked={picked} onPick={handlePick} locked={locked} showFeedback={true} />
+      {locked && (
+        <div className="flex justify-end mt-4">
+          <button className="vr-btn vr-btn-primary" onClick={handleNext}>{idx + 1 < qs.length ? "Next" : "Finish"}<ArrowRight size={18} /></button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SessionDone({ result, kind, streak, onHome, onAgain }) {
+  const pct = Math.round(result.score / result.total * 100);
+  const line = pct >= 80 ? "Sharp work." : pct >= 55 ? "Solid. The explanations are where the marks come from." : "Tough set. Read the explanations back — tomorrow's questions will meet you where you are.";
+  return (
+    <div className="vr-card p-6 text-center mt-6">
+      <div className="vr-display" style={{ fontSize: 44 }}>{result.score} / {result.total}</div>
+      <p className="mt-2 font-semibold">{line}</p>
+      {kind === "drill" && streak > 0 && (
+        <div className="vr-chip mt-4" style={{ color: "var(--pencil)" }}><Flame size={15} />{streak} day streak</div>
+      )}
+      <div className="flex gap-3 justify-center mt-6">
+        <button className="vr-btn vr-btn-ghost" onClick={onHome}>Home</button>
+        <button className="vr-btn vr-btn-primary" onClick={onAgain}>Go again</button>
+      </div>
+    </div>
+  );
+}
+
+/* ================= FOCUS PICKER ================= */
+function FocusPicker({ st, onPick, onBack }) {
+  const groups = {};
+  for (const t of ALL_TYPES) { const g = TYPE_META[t].group; (groups[g] = groups[g] || []).push(t); }
+  return (
+    <div>
+      <TopBar left={<button className="vr-btn vr-btn-ghost" onClick={onBack}><ChevronLeft size={18} />Back</button>} centre={<span className="vr-display text-[17px]">Practise a type</span>} right={<span />} />
+      {Object.entries(groups).map(([g, ts]) => (
+        <div key={g} className="mt-4">
+          <div className="font-bold text-[13px] uppercase tracking-wider mb-2" style={{ color: "var(--muted)" }}>{g}</div>
+          <div className="grid gap-2">
+            {ts.map(t => {
+              const s = st.types[t];
+              const acc = s.answered ? Math.round(s.correct / s.answered * 100) + "%" : "new";
+              return (
+                <button key={t} className="vr-opt" style={{ fontSize: 16 }} onClick={() => onPick(t)}>
+                  <span className="flex-1">{TYPE_META[t].label}</span>
+                  <span className="vr-mono text-[13px]" style={{ color: "var(--muted)" }}>{acc}</span>
+                  <LevelDots n={s.level} />
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ================= MOCK ================= */
+function MockSetup({ onStart, onBack }) {
+  return (
+    <div>
+      <TopBar left={<button className="vr-btn vr-btn-ghost" onClick={onBack}><ChevronLeft size={18} />Back</button>} centre={<span className="vr-display text-[17px]">Mock test</span>} right={<span />} />
+      <p className="mt-2 text-[15px]" style={{ color: "var(--muted)" }}>Exam rules: no hints, no explanations until the end, and the clock decides when you stop. Questions are pitched at real test level.</p>
+      <div className="grid gap-3 mt-5">
+        <button className="vr-card p-5 text-left" style={{ cursor: "pointer" }} onClick={() => onStart("mini")}>
+          <div className="vr-display text-[19px]">Mini mock</div>
+          <div className="text-[15px] mt-1" style={{ color: "var(--muted)" }}>20 questions · 15 minutes — a sprint</div>
+        </button>
+        <button className="vr-card p-5 text-left" style={{ cursor: "pointer" }} onClick={() => onStart("full")}>
+          <div className="vr-display text-[19px]">Full mock</div>
+          <div className="text-[15px] mt-1" style={{ color: "var(--muted)" }}>60 questions · 50 minutes — the real shape of the test</div>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function MockFlow({ st, commit, kind, onFinish, onExit }) {
+  const [qs, setQs] = useState(null);
+  const totalSecs = kind === "full" ? 50 * 60 : 15 * 60;
+  const deadlineRef = useRef(null);
+  const [remaining, setRemaining] = useState(totalSecs);
+  const [idx, setIdx] = useState(0);
+  const [answers, setAnswers] = useState({});
+  const answersRef = useRef({});
+  const qsRef = useRef(null);
+  const submittedRef = useRef(false);
+  useEffect(() => {
+    const next = structuredClone(st);
+    const built = buildMock(next, makeRng(), kind);
+    commit(next);
+    qsRef.current = built;
+    setQs(built);
+    deadlineRef.current = Date.now() + totalSecs * 1000;
+  }, []);
+
+  function submit() {
+    if (submittedRef.current || !qsRef.current) return;
+    submittedRef.current = true;
+    const finalAnswers = answersRef.current;
+    let score = 0; const perType = {};
+    qsRef.current.forEach((q, i) => {
+      const ok = finalAnswers[i] === q.answer;
+      if (ok) score += 1;
+      const p = perType[q.typeId] = perType[q.typeId] || { right: 0, total: 0 };
+      p.total += 1; if (ok) p.right += 1;
+    });
+    const record = { date: new Date().toISOString(), kind, score, total: qsRef.current.length, perType };
+    const next = structuredClone(st);
+    next.totals.mocks += 1;
+    next.mocks = [record, ...next.mocks].slice(0, 20);
+    commit(next);
+    onFinish({ record, qs: qsRef.current, answers: finalAnswers });
+  }
+  useEffect(() => {
+    if (!qs) return;
+    const id = setInterval(() => {
+      const r = Math.round((deadlineRef.current - Date.now()) / 1000);
+      setRemaining(r);
+      if (r <= 0) { clearInterval(id); submit(); }
+    }, 500);
+    return () => clearInterval(id);
+  }, [qs]);
+
+  if (!qs) return null;
+  const q = qs[idx];
+  const answeredCount = Object.keys(answers).length;
+  const low = remaining <= totalSecs * 0.2;
+  return (
+    <div>
+      <TopBar
+        left={<ExitButton onExit={onExit} />}
+        centre={<span className="vr-mono font-bold text-[17px]" style={{ color: low ? "var(--berry)" : "var(--ink)" }}>{fmtClock(remaining)}</span>}
+        right={<button className="vr-btn vr-btn-ghost" onClick={submit}>Hand in</button>}
+      />
+      <div className="flex flex-wrap gap-1.5 mb-4" aria-label="Question navigator">
+        {qs.map((_, i) => (
+          <button key={i} onClick={() => setIdx(i)} aria-label={"Question " + (i + 1)}
+            className="vr-mono"
+            style={{ width: 26, height: 26, fontSize: 11, fontWeight: 700, borderRadius: 7, cursor: "pointer",
+              border: i === idx ? "2px solid var(--cobalt)" : "1px solid var(--line)",
+              background: answers[i] !== undefined ? "var(--cobalt)" : "var(--card)",
+              color: answers[i] !== undefined ? "#fff" : "var(--muted)" }}>{i + 1}</button>
+        ))}
+      </div>
+      <QuestionCard q={q} picked={answers[idx] ?? null} onPick={opt => setAnswers(a => { const n = { ...a, [idx]: opt }; answersRef.current = n; return n; })} locked={false} showFeedback={false} />
+      <div className="flex justify-between items-center mt-4">
+        <button className="vr-btn vr-btn-ghost" disabled={idx === 0} style={{ opacity: idx === 0 ? 0.4 : 1 }} onClick={() => setIdx(idx - 1)}><ChevronLeft size={18} />Previous</button>
+        <span className="text-[13px] font-semibold" style={{ color: "var(--muted)" }}>{answeredCount} of {qs.length} answered</span>
+        {idx + 1 < qs.length
+          ? <button className="vr-btn vr-btn-primary" onClick={() => setIdx(idx + 1)}>Next<ArrowRight size={18} /></button>
+          : <button className="vr-btn vr-btn-primary" onClick={submit}>Hand in</button>}
+      </div>
+    </div>
+  );
+}
+
+function MockReview({ data, onHome }) {
+  const { record, qs, answers } = data;
+  const pct = Math.round(record.score / record.total * 100);
+  const rows = Object.entries(record.perType).sort((a, b) => (a[1].right / a[1].total) - (b[1].right / b[1].total));
+  return (
+    <div>
+      <TopBar left={<span />} centre={<span className="vr-display text-[17px]">Mock results</span>} right={<button className="vr-btn vr-btn-ghost" onClick={onHome}>Done</button>} />
+      <div className="vr-card p-6 text-center">
+        <div className="vr-display" style={{ fontSize: 44 }}>{record.score} / {record.total}</div>
+        <div className="font-semibold mt-1" style={{ color: "var(--muted)" }}>{pct}% · {record.kind === "full" ? "Full" : "Mini"} mock · {fmtDate(record.date)}</div>
+      </div>
+      <div className="vr-card p-5 mt-4">
+        <div className="font-bold text-[13px] uppercase tracking-wider mb-3" style={{ color: "var(--muted)" }}>By question type — weakest first</div>
+        <div className="grid gap-2">
+          {rows.map(([t, p]) => (
+            <div key={t} className="flex items-center gap-3">
+              <span className="flex-1 text-[15px] font-semibold">{TYPE_META[t].label}</span>
+              <div className="vr-bar" style={{ width: 90 }}><div style={{ width: (p.right / p.total * 100) + "%", background: p.right / p.total >= 0.6 ? "var(--leaf)" : "var(--berry)" }} /></div>
+              <span className="vr-mono text-[13px]" style={{ color: "var(--muted)", width: 38, textAlign: "right" }}>{p.right}/{p.total}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="mt-4 grid gap-3">
+        {qs.map((q, i) => {
+          const user = answers[i]; const ok = user === q.answer;
+          return (
+            <div key={i} className="vr-card p-4" style={{ borderLeft: "4px solid " + (ok ? "var(--leaf)" : "var(--berry)") }}>
+              <div className="text-[12px] font-bold uppercase tracking-wider" style={{ color: "var(--muted)" }}>{i + 1} · {TYPE_META[q.typeId].label}</div>
+              <div className="text-[15px] font-semibold mt-1">{q.prompt}</div>
+              {q.big && <div className="vr-display mt-1" style={{ fontSize: 20 }}>{q.big}</div>}
+              {q.line && <div className="mt-1 text-[15px]">{q.line}</div>}
+              {q.mono && <div className="vr-mono mt-1 text-[15px] font-bold">{q.mono}</div>}
+              <div className="mt-2 text-[15px]">
+                {ok ? <span style={{ color: "var(--leaf)", fontWeight: 700 }}>Right: {q.answer}</span>
+                  : <span><span style={{ color: "var(--berry)", fontWeight: 700 }}>{user === undefined ? "Not answered" : "You put " + user}</span><span style={{ fontWeight: 700 }}> · Answer: {q.answer}</span></span>}
+              </div>
+              <div className="mt-1 text-[14px]" style={{ color: "var(--muted)" }}>{q.explain}</div>
+            </div>
+          );
+        })}
+      </div>
+      <div className="flex justify-center mt-6"><button className="vr-btn vr-btn-primary" onClick={onHome}>Back to home</button></div>
+    </div>
+  );
+}
+
+/* ================= PROGRESS ================= */
+function ProgressDash({ st, onBack, memOnly }) {
+  const groups = {};
+  for (const t of ALL_TYPES) { const g = TYPE_META[t].group; (groups[g] = groups[g] || []).push(t); }
+  const weakest = ALL_TYPES.filter(t => st.types[t].answered >= 4)
+    .sort((a, b) => (st.types[a].correct / st.types[a].answered) - (st.types[b].correct / st.types[b].answered)).slice(0, 3);
+  return (
+    <div>
+      <TopBar left={<button className="vr-btn vr-btn-ghost" onClick={onBack}><ChevronLeft size={18} />Back</button>} centre={<span className="vr-display text-[17px]">Progress</span>} right={<span />} />
+      <div className="grid grid-cols-3 gap-3 mt-2">
+        {[
+          { label: "Day streak", value: st.streak.current, sub: "best " + st.streak.best },
+          { label: "Drills done", value: st.totals.drills, sub: st.totals.answered + " questions" },
+          { label: "Mocks sat", value: st.totals.mocks, sub: st.mocks[0] ? Math.round(st.mocks[0].score / st.mocks[0].total * 100) + "% last" : "—" },
+        ].map(c => (
+          <div key={c.label} className="vr-card p-4 text-center">
+            <div className="vr-display" style={{ fontSize: 28 }}>{c.value}</div>
+            <div className="text-[12px] font-bold uppercase tracking-wider mt-1" style={{ color: "var(--muted)" }}>{c.label}</div>
+            <div className="text-[12px]" style={{ color: "var(--muted)" }}>{c.sub}</div>
+          </div>
+        ))}
+      </div>
+      {weakest.length > 0 && (
+        <div className="mt-4 text-[14px] font-semibold" style={{ color: "var(--muted)" }}>
+          Worth a focus session: {weakest.map(t => TYPE_META[t].label).join(" · ")}
+        </div>
+      )}
+      {Object.entries(groups).map(([g, ts]) => (
+        <div key={g} className="vr-card p-5 mt-4">
+          <div className="font-bold text-[13px] uppercase tracking-wider mb-3" style={{ color: "var(--muted)" }}>{g}</div>
+          <div className="grid gap-2.5">
+            {ts.map(t => {
+              const s = st.types[t];
+              const acc = s.answered ? s.correct / s.answered : null;
+              return (
+                <div key={t} className="flex items-center gap-3">
+                  <span className="flex-1 text-[15px] font-semibold">{TYPE_META[t].label}</span>
+                  <LevelDots n={s.level} />
+                  <div className="vr-bar" style={{ width: 80 }}><div style={{ width: (acc === null ? 0 : acc * 100) + "%", background: acc !== null && acc < 0.5 ? "var(--berry)" : "var(--cobalt)" }} /></div>
+                  <span className="vr-mono text-[13px]" style={{ color: "var(--muted)", width: 42, textAlign: "right" }}>{acc === null ? "—" : Math.round(acc * 100) + "%"}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+      <div className="text-[12px] mt-2" style={{ color: "var(--muted)" }}>Accuracy counts practice questions (drills and focus). Levels adapt as questions are answered. Mock scores are kept separately below.</div>
+      {st.mocks.length > 0 && (
+        <div className="vr-card p-5 mt-4">
+          <div className="font-bold text-[13px] uppercase tracking-wider mb-3" style={{ color: "var(--muted)" }}>Mock history</div>
+          <div className="grid gap-2">
+            {st.mocks.map((m, i) => (
+              <div key={i} className="flex items-center gap-3 text-[15px]">
+                <span className="vr-mono text-[13px]" style={{ color: "var(--muted)" }}>{fmtDate(m.date)}</span>
+                <span className="flex-1 font-semibold">{m.kind === "full" ? "Full" : "Mini"}</span>
+                <span className="vr-mono font-bold">{m.score}/{m.total}</span>
+                <span className="vr-mono text-[13px]" style={{ color: "var(--muted)", width: 42, textAlign: "right" }}>{Math.round(m.score / m.total * 100)}%</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {memOnly && <div className="mt-4 text-[13px]" style={{ color: "var(--berry)" }}>Saving is not available in this view, so progress will reset when the page closes.</div>}
+    </div>
+  );
+}
+
+/* ================= ABOUT ================= */
+function AboutTest({ onBack }) {
+  return (
+    <div>
+      <TopBar left={<button className="vr-btn vr-btn-ghost" onClick={onBack}><ChevronLeft size={18} />Back</button>} centre={<span className="vr-display text-[17px]">About the test</span>} right={<span />} />
+      <div className="vr-card p-5 mt-2 grid gap-3 text-[15px] leading-relaxed">
+        <p><strong>The test.</strong> St Mary Magdalene Academy's Year 7 Aptitude Test is a single 50-minute GL Assessment <strong>verbal reasoning</strong> paper. There are no maths or English papers for this route — this one test is the whole thing.</p>
+        <p><strong>The stakes.</strong> 18 of the 180 Year 7 places (10%) go to the highest scorers, ranked purely on the test. All other places are allocated on the school's usual criteria, so sitting it is optional — a strong score is one extra route in, and a weak score costs nothing.</p>
+        <p><strong>Timeline for a child in Year 4 now</strong> (projected from the 2026 cycle — confirm on smmacademy.org each spring): register between May and early July <strong>2027</strong> (the noon deadline is strictly enforced); sit the test in early October <strong>2027</strong>, at the start of Year 6; submit the council application by <strong>31-10-2027</strong>; entry September <strong>2028</strong>.</p>
+        <p><strong>How to prepare.</strong> The school refreshes test content each year to reduce predictability, so broad coverage of question types plus wide reading beats question-spotting. Use this app little and often — the daily drill is built for ten minutes a day — and sit the official free GL familiarisation papers at <span className="vr-mono">11plus.gl-assessment.co.uk/free-materials</span> nearer the time.</p>
+      </div>
+    </div>
+  );
+}
+
+/* ================= HOME ================= */
+function HomeScreen({ st, go, memOnly }) {
+  const doneToday = st.streak.last === todayStr();
+  return (
+    <div>
+      <div className="pt-8 pb-2 text-center">
+        <div className="vr-display" style={{ fontSize: 34, lineHeight: 1.05 }}>Code Cracker</div>
+        <div className="mt-1 font-semibold text-[14px] uppercase tracking-widest" style={{ color: "var(--muted)" }}>Verbal reasoning trainer</div>
+        <div className="vr-strip mt-4" aria-hidden="true">{"ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").map(c => <span key={c}>{c}</span>)}</div>
+        <div className="flex justify-center gap-2 mt-4">
+          {st.streak.current > 0 && <span className="vr-chip" style={{ color: "var(--pencil)" }}><Flame size={15} />{st.streak.current} day streak</span>}
+          {doneToday && <span className="vr-chip" style={{ color: "var(--leaf)" }}><Check size={15} />Today's drill done</span>}
+        </div>
+      </div>
+      <div className="grid gap-3 mt-4">
+        <button className="vr-card p-5 text-left flex items-center gap-4" style={{ cursor: "pointer", borderColor: "var(--cobalt)", borderWidth: 2 }} onClick={() => go("drill")}>
+          <Zap size={26} style={{ color: "var(--cobalt)", flexShrink: 0 }} />
+          <span><span className="vr-display text-[19px] block">Daily drill</span><span className="text-[14px]" style={{ color: "var(--muted)" }}>12 mixed questions with instant explanations — about ten minutes</span></span>
+        </button>
+        <button className="vr-card p-5 text-left flex items-center gap-4" style={{ cursor: "pointer" }} onClick={() => go("focusPick")}>
+          <Target size={26} style={{ color: "var(--pencil)", flexShrink: 0 }} />
+          <span><span className="vr-display text-[19px] block">Practise a type</span><span className="text-[14px]" style={{ color: "var(--muted)" }}>Eight questions on one skill — pick your weak spot</span></span>
+        </button>
+        <button className="vr-card p-5 text-left flex items-center gap-4" style={{ cursor: "pointer" }} onClick={() => go("mockSetup")}>
+          <Timer size={26} style={{ color: "var(--berry)", flexShrink: 0 }} />
+          <span><span className="vr-display text-[19px] block">Mock test</span><span className="text-[14px]" style={{ color: "var(--muted)" }}>Against the clock, no help — like the real thing</span></span>
+        </button>
+      </div>
+      <div className="flex justify-center gap-2 mt-5">
+        <button className="vr-btn vr-btn-ghost" onClick={() => go("progress")}><BarChart3 size={17} />Progress</button>
+        <button className="vr-btn vr-btn-ghost" onClick={() => go("about")}><Info size={17} />About the test</button>
+      </div>
+      {memOnly && <div className="text-center text-[13px] mt-3" style={{ color: "var(--berry)" }}>Saving is not available here — progress will reset when the page closes.</div>}
+    </div>
+  );
+}
+
+/* ================= APP ================= */
+function App() {
+  const [st, setSt] = useState(null);
+  const [memOnly, setMemOnly] = useState(false);
+  const [screen, setScreen] = useState({ name: "home" });
+  const [sessionKey, setSessionKey] = useState(0);
+
+  useEffect(() => { loadState().then(({ st, ok }) => { setSt(st); setMemOnly(!ok); }); }, []);
+
+  function commit(next) { setSt(next); saveState(next); }
+  function go(name, payload) { setSessionKey(k => k + 1); setScreen({ name, payload }); }
+
+  if (!st) return (
+    <div className="vr-root flex items-center justify-center" style={{ minHeight: "100vh" }}>
+      <style>{STYLE}</style>
+      <div className="vr-display" style={{ fontSize: 22, color: "var(--muted)" }}>Sharpening pencils…</div>
+    </div>
+  );
+
+  const s = screen.name;
+  return (
+    <div className="vr-root">
+      <style>{STYLE}</style>
+      <div className="max-w-2xl mx-auto px-4 pb-16">
+        {s === "home" && <HomeScreen st={st} go={go} memOnly={memOnly} />}
+        {s === "drill" && <PracticeFlow key={sessionKey} st={st} commit={commit} kind="drill" onExit={() => go("home")} onDone={r => go("done", { r, kind: "drill" })} />}
+        {s === "focusPick" && <FocusPicker st={st} onPick={t => go("focus", { t })} onBack={() => go("home")} />}
+        {s === "focus" && <PracticeFlow key={sessionKey} st={st} commit={commit} kind="focus" focusType={screen.payload.t} onExit={() => go("focusPick")} onDone={r => go("done", { r, kind: "focus", t: screen.payload.t })} />}
+        {s === "done" && <SessionDone result={screen.payload.r} kind={screen.payload.kind} streak={st.streak.current} onHome={() => go("home")} onAgain={() => go(screen.payload.kind === "drill" ? "drill" : "focus", screen.payload.kind === "drill" ? undefined : { t: screen.payload.t })} />}
+        {s === "mockSetup" && <MockSetup onStart={kind => go("mock", { kind })} onBack={() => go("home")} />}
+        {s === "mock" && <MockFlow key={sessionKey} st={st} commit={commit} kind={screen.payload.kind} onExit={() => go("home")} onFinish={data => go("mockReview", data)} />}
+        {s === "mockReview" && <MockReview data={screen.payload} onHome={() => go("home")} />}
+        {s === "progress" && <ProgressDash st={st} onBack={() => go("home")} memOnly={memOnly} />}
+        {s === "about" && <AboutTest onBack={() => go("home")} />}
+      </div>
+    </div>
+  );
+}
+
+createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
