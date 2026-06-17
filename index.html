@@ -26,12 +26,12 @@
 //  EDIT THESE THREE LINES, THEN SAVE. Nothing else needs changing.
 // ============================================================================
 const SUPABASE_URL      = "https://tcsxqttevfciezjdrepq.supabase.co";   // <-- paste your Project URL
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRjc3hxdHRldmZjaWV6amRyZXBxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2ODQ1ODIsImV4cCI6MjA5NzI2MDU4Mn0.KeeCXlLhNDeMAUZTcIyzbnsjjp86ZrIRH0pLowraoOo";    // <-- paste your anon public key
+const SUPABASE_ANON_KEY = "sb_publishable_DhdzWBtGH7Zwx0Gkr42O4A_IYeetqUX";    // <-- paste your anon public key
 const PROFILE_ID        = "tcsxqttevfciezjdrepq";                          // any fixed string; leave as-is is fine
 // ============================================================================
 
 const REST = SUPABASE_URL + "/rest/v1/progress";
-const HDR = { "apikey": SUPABASE_ANON_KEY, "Authorization": "Bearer " + SUPABASE_ANON_KEY, "Content-Type": "application/json" };
+const HDR = { "apikey": SUPABASE_ANON_KEY, "Content-Type": "application/json" };
 const TSKEY = "smma-vr-state-v1::ts";
 const CONFIGURED = SUPABASE_URL.indexOf("YOURPROJECT") === -1 && SUPABASE_ANON_KEY.indexOf("PASTE-") === -1;
 
